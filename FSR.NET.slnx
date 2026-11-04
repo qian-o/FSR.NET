@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="LICENSE" />
+    <File Path="NuGet.Packaging.props" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="FSR.NET.Generator/FSR.NET.Generator.csproj" />
+  <Project Path="FSR.NET/FSR.NET.csproj" />
+</Solution>
