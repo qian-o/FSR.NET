@@ -27,7 +27,7 @@ Add `<FSRRuntime>` to your `.csproj` to stage signed FSR effect DLLs (`amd_fidel
     <!-- Download official binaries (cached in system temp): All | win-x64 -->
     <FSRRuntime Include="win-x64" />
 
-    <!-- Or copy from a local directory or file (use None to clear inherited entries) -->
+    <!-- Or copy from a local directory or file -->
     <!--
     <FSRRuntime Include="win-x64">
         <Path>path\to\FidelityFX-SDK\Kits\FidelityFX\signedbin</Path>
