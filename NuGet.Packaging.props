@@ -1,7 +1,7 @@
 ﻿<Project>
 
     <PropertyGroup>
-        <Version>2.4.0</Version>
+        <Version>2.4.0.1</Version>
         <Authors>qian-o</Authors>
         <Copyright>Copyright (c) 2026 qian-o</Copyright>
         <Description>C# bindings for AMD FSR.</Description>
