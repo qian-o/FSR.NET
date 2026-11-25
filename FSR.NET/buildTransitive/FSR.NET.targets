@@ -2,7 +2,7 @@
 
     <Import Project="$(MSBuildThisFileDirectory)FSR.NET.props" Condition="'$(_FsrSdkRelease)' == ''" />
 
-    <UsingTask TaskName="FsrDownloadAssets"
+    <UsingTask TaskName="FsrResolveRuntime"
                TaskFactory="RoslynCodeTaskFactory"
                AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
@@ -19,10 +19,11 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace FSR.NET.Tasks
 {
-    public sealed class FsrDownloadAssets : Microsoft.Build.Utilities.Task, ICancelableTask
+    public sealed class FsrResolveRuntime : Microsoft.Build.Utilities.Task, ICancelableTask
     {
         private const int MaxAttempts = 3;
         private const int ReadTimeoutSeconds = 60;
@@ -30,13 +31,71 @@ namespace FSR.NET.Tasks
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
         [Required]
-        public ITaskItem[] Assets { get; set; }
+        public ITaskItem[] RuntimeItems { get; set; }
+
+        [Required]
+        public ITaskItem[] ManifestEntries { get; set; }
+
+        [Required]
+        public string ProjectDirectory { get; set; }
 
         [Required]
         public string CacheDirectory { get; set; }
 
         [Required]
+        public string DefaultBaseUrl { get; set; }
+
+        [Required]
         public string SdkRelease { get; set; }
+
+        public string RuntimeIdentifier { get; set; }
+
+        public string RuntimeIdentifiers { get; set; }
+
+        [Output]
+        public ITaskItem[] ResolvedAssets { get; set; }
+
+        private enum RidConfigKind
+        {
+            Download,
+            LocalAllRoot,
+            LocalExplicit
+        }
+
+        private sealed class RidConfig
+        {
+            public RidConfigKind Kind { get; private set; }
+            public string RootDir { get; private set; }
+            public List<string> Paths { get; private set; }
+
+            public static RidConfig CreateDownload()
+            {
+                return new RidConfig { Kind = RidConfigKind.Download };
+            }
+
+            public static RidConfig CreateLocalAllRoot(string rootDir)
+            {
+                return new RidConfig { Kind = RidConfigKind.LocalAllRoot, RootDir = rootDir };
+            }
+
+            public static RidConfig CreateLocalExplicit(string path)
+            {
+                return new RidConfig
+                {
+                    Kind = RidConfigKind.LocalExplicit,
+                    Paths = new List<string> { path }
+                };
+            }
+        }
+
+        private sealed class DownloadEntry
+        {
+            public string Rid { get; set; }
+            public string AssetName { get; set; }
+            public string DownloadUrl { get; set; }
+            public string CachedPath { get; set; }
+            public string Sha256 { get; set; }
+        }
 
         public void Cancel()
         {
@@ -57,7 +116,7 @@ namespace FSR.NET.Tasks
             }
             catch (OperationCanceledException)
             {
-                LogHigh("FSR.NET: Runtime asset download canceled.");
+                LogHigh("FSR.NET: Runtime asset resolution canceled.");
                 return false;
             }
             finally
@@ -68,20 +127,306 @@ namespace FSR.NET.Tasks
 
         private async Task<bool> ExecuteAsync()
         {
+            ResolvedAssets = Array.Empty<ITaskItem>();
+            if ((RuntimeItems == null) || (RuntimeItems.Length == 0))
+            {
+                return true;
+            }
+
+            List<string> supportedRids = new List<string>();
+            HashSet<string> supportedRidSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, List<ITaskItem>> manifestByRid = new Dictionary<string, List<ITaskItem>>(StringComparer.OrdinalIgnoreCase);
+            foreach (ITaskItem entry in ManifestEntries)
+            {
+                string rid = entry.GetMetadata("Rid").Trim().ToLowerInvariant();
+                if (supportedRidSet.Add(rid))
+                {
+                    supportedRids.Add(rid);
+                }
+
+                List<ITaskItem> list;
+                if (!manifestByRid.TryGetValue(rid, out list))
+                {
+                    list = new List<ITaskItem>();
+                    manifestByRid[rid] = list;
+                }
+
+                list.Add(entry);
+            }
+
+            Dictionary<string, RidConfig> configs = new Dictionary<string, RidConfig>(StringComparer.OrdinalIgnoreCase);
+            foreach (ITaskItem item in RuntimeItems)
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                string spec = (item.ItemSpec ?? string.Empty).Trim();
+                string rawPath = (item.GetMetadata("Path") ?? string.Empty).Trim();
+
+                if (string.Equals(spec, "None", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (rawPath.Length > 0)
+                    {
+                        Log.LogError("FSR.NET: FSRRuntime 'None' cannot specify a Path ('{0}').", rawPath);
+                        return false;
+                    }
+
+                    configs.Clear();
+                    continue;
+                }
+
+                if (string.Equals(spec, "All", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (rawPath.Length == 0)
+                    {
+                        foreach (string rid in supportedRids)
+                        {
+                            configs[rid] = RidConfig.CreateDownload();
+                        }
+                    }
+                    else
+                    {
+                        string rootDir = ResolveUserPath(rawPath, ProjectDirectory);
+                        foreach (string rid in supportedRids)
+                        {
+                            configs[rid] = RidConfig.CreateLocalAllRoot(rootDir);
+                        }
+                    }
+
+                    continue;
+                }
+
+                string canonicalRid = FindCanonicalRid(supportedRids, spec);
+                if (canonicalRid == null)
+                {
+                    Log.LogError("FSR.NET: Invalid FSRRuntime Include value '{0}'. Expected 'All', 'None', or one of: {1}.", spec, string.Join(", ", supportedRids));
+                    return false;
+                }
+
+                if (rawPath.Length == 0)
+                {
+                    configs[canonicalRid] = RidConfig.CreateDownload();
+                }
+                else
+                {
+                    string fullPath = ResolveUserPath(rawPath, ProjectDirectory);
+                    RidConfig existing;
+                    if (configs.TryGetValue(canonicalRid, out existing) && (existing.Kind == RidConfigKind.LocalExplicit))
+                    {
+                        existing.Paths.Add(fullPath);
+                    }
+                    else
+                    {
+                        configs[canonicalRid] = RidConfig.CreateLocalExplicit(fullPath);
+                    }
+                }
+            }
+
+            HashSet<string> activeRids = ParseActiveRids(RuntimeIdentifier, RuntimeIdentifiers);
+            List<string> selectedRids = new List<string>();
+            foreach (string rid in supportedRids)
+            {
+                if (configs.ContainsKey(rid) && ((activeRids == null) || activeRids.Contains(rid)))
+                {
+                    selectedRids.Add(rid);
+                }
+            }
+
+            if (selectedRids.Count == 0)
+            {
+                return true;
+            }
+
+            Dictionary<string, List<ITaskItem>> resolvedByRid = new Dictionary<string, List<ITaskItem>>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> localAllRootHits = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            List<string> localAllRootsSeen = new List<string>();
+            List<DownloadEntry> downloadEntries = new List<DownloadEntry>();
+            bool flattenToRoot = !string.IsNullOrWhiteSpace(RuntimeIdentifier);
+
+            foreach (string rid in selectedRids)
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                RidConfig config = configs[rid];
+
+                if (config.Kind == RidConfigKind.LocalAllRoot)
+                {
+                    string rootDir = config.RootDir;
+                    if (!localAllRootHits.ContainsKey(rootDir))
+                    {
+                        if (!Directory.Exists(rootDir))
+                        {
+                            Log.LogError("FSR.NET: Runtime directory '{0}' specified in FSRRuntime does not exist.", rootDir);
+                            return false;
+                        }
+
+                        localAllRootHits[rootDir] = 0;
+                        localAllRootsSeen.Add(rootDir);
+                    }
+
+                    string ridDir = Path.Combine(rootDir, rid);
+                    if (!Directory.Exists(ridDir))
+                    {
+                        if (activeRids != null)
+                        {
+                            Log.LogError("FSR.NET: Runtime directory '{0}' for '{1}' does not exist under '{2}'.", ridDir, rid, rootDir);
+                            return false;
+                        }
+
+                        continue;
+                    }
+
+                    Dictionary<string, string> filesByName = CreateFileMap(rid);
+                    int added;
+                    if (!CollectDirectoryFiles(rid, ridDir, filesByName, out added))
+                    {
+                        return false;
+                    }
+
+                    if (added == 0)
+                    {
+                        if (activeRids != null)
+                        {
+                            Log.LogError("FSR.NET: No runtime shared libraries for '{0}' were found in directory '{1}'.", rid, ridDir);
+                            return false;
+                        }
+
+                        continue;
+                    }
+
+                    localAllRootHits[rootDir] += filesByName.Count;
+                    resolvedByRid[rid] = CreateAssetItems(rid, filesByName, flattenToRoot);
+                }
+                else if (config.Kind == RidConfigKind.LocalExplicit)
+                {
+                    Dictionary<string, string> filesByName = CreateFileMap(rid);
+                    foreach (string localPath in config.Paths)
+                    {
+                        if (File.Exists(localPath))
+                        {
+                            string fileName = Path.GetFileName(localPath);
+                            if (IsCoreNativeBinary(fileName))
+                            {
+                                Log.LogError("FSR.NET: '{0}' is a core loader bundled with the package; specify only runtime libraries in Path.", localPath);
+                                return false;
+                            }
+
+                            if (!IsValidRuntimeFileName(rid, fileName))
+                            {
+                                Log.LogError("FSR.NET: File '{0}' is not a valid runtime shared library for '{1}'.", localPath, rid);
+                                return false;
+                            }
+
+                            if (!AddFileCheckingDuplicates(filesByName, fileName, localPath, rid))
+                            {
+                                return false;
+                            }
+                        }
+                        else if (Directory.Exists(localPath))
+                        {
+                            int added;
+                            if (!CollectDirectoryFiles(rid, localPath, filesByName, out added))
+                            {
+                                return false;
+                            }
+
+                            if (added == 0)
+                            {
+                                string ridSubdir = Path.Combine(localPath, rid);
+                                if (Directory.Exists(ridSubdir))
+                                {
+                                    if (!CollectDirectoryFiles(rid, ridSubdir, filesByName, out added))
+                                    {
+                                        return false;
+                                    }
+                                }
+
+                                if (added == 0)
+                                {
+                                    Log.LogError("FSR.NET: No runtime shared libraries for '{0}' were found in directory '{1}'.", rid, localPath);
+                                    return false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Log.LogError("FSR.NET: Runtime path '{0}' specified for '{1}' does not exist.", localPath, rid);
+                            return false;
+                        }
+                    }
+
+                    resolvedByRid[rid] = CreateAssetItems(rid, filesByName, flattenToRoot);
+                }
+                else
+                {
+                    List<ITaskItem> manifestEntries;
+                    if (manifestByRid.TryGetValue(rid, out manifestEntries))
+                    {
+                        List<ITaskItem> ridItems = new List<ITaskItem>(manifestEntries.Count);
+                        foreach (ITaskItem entry in manifestEntries)
+                        {
+                            string assetName = entry.GetMetadata("AssetName");
+                            string relativeUrl = entry.GetMetadata("RelativeUrl");
+                            string expectedSha256 = entry.GetMetadata("Sha256");
+                            string cachedPath = Path.GetFullPath(Path.Combine(CacheDirectory, rid, assetName));
+
+                            downloadEntries.Add(new DownloadEntry
+                            {
+                                Rid = rid,
+                                AssetName = assetName,
+                                DownloadUrl = DefaultBaseUrl.TrimEnd('/') + "/" + relativeUrl.TrimStart('/'),
+                                CachedPath = cachedPath,
+                                Sha256 = expectedSha256
+                            });
+
+                            ridItems.Add(CreateAssetItem(rid, assetName, cachedPath, flattenToRoot));
+                        }
+
+                        resolvedByRid[rid] = ridItems;
+                    }
+                }
+            }
+
+            foreach (string rootDir in localAllRootsSeen)
+            {
+                if (localAllRootHits[rootDir] == 0)
+                {
+                    Log.LogError("FSR.NET: No '<rid>' subdirectories containing runtime libraries were found under '{0}'. When using Include=\"All\" with Path, place libraries under '<Path>/<rid>/' (for example '{1}'), or specify a concrete RID such as Include=\"{1}\".", rootDir, supportedRids[0]);
+                    return false;
+                }
+            }
+
+            if (downloadEntries.Count > 0)
+            {
+                if (!await EnsureDownloadedAsync(downloadEntries).ConfigureAwait(false))
+                {
+                    return false;
+                }
+            }
+
+            List<ITaskItem> output = new List<ITaskItem>();
+            foreach (string rid in selectedRids)
+            {
+                List<ITaskItem> ridItems;
+                if (resolvedByRid.TryGetValue(rid, out ridItems))
+                {
+                    output.AddRange(ridItems);
+                }
+            }
+
+            ResolvedAssets = output.ToArray();
+            return true;
+        }
+
+        private async Task<bool> EnsureDownloadedAsync(List<DownloadEntry> entries)
+        {
+            List<DownloadEntry> precheckPending = GetPendingDownloads(entries);
+            if (precheckPending.Count == 0)
+            {
+                return true;
+            }
+
             Directory.CreateDirectory(CacheDirectory);
             using (FileStream lockStream = AcquireLock(Path.Combine(CacheDirectory, ".lock")))
             {
-                List<ITaskItem> pending = new List<ITaskItem>();
-                foreach (ITaskItem item in Assets)
-                {
-                    cancellation.Token.ThrowIfCancellationRequested();
-                    string cachedPath = item.GetMetadata("CachedPath");
-                    if ((!File.Exists(cachedPath)) || (!string.Equals(ComputeFileSha256(cachedPath), item.GetMetadata("Sha256"), StringComparison.OrdinalIgnoreCase)))
-                    {
-                        pending.Add(item);
-                    }
-                }
-
+                List<DownloadEntry> pending = GetPendingDownloads(entries);
                 if (pending.Count == 0)
                 {
                     return true;
@@ -119,6 +464,34 @@ namespace FSR.NET.Tasks
             }
         }
 
+        private List<DownloadEntry> GetPendingDownloads(List<DownloadEntry> entries)
+        {
+            List<DownloadEntry> pending = new List<DownloadEntry>();
+            foreach (DownloadEntry entry in entries)
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                bool valid = false;
+                if (File.Exists(entry.CachedPath))
+                {
+                    try
+                    {
+                        valid = string.Equals(ComputeFileSha256(entry.CachedPath), entry.Sha256, StringComparison.OrdinalIgnoreCase);
+                    }
+                    catch (IOException)
+                    {
+                        valid = false;
+                    }
+                }
+
+                if (!valid)
+                {
+                    pending.Add(entry);
+                }
+            }
+
+            return pending;
+        }
+
         private FileStream AcquireLock(string lockPath)
         {
             bool logged = false;
@@ -142,13 +515,13 @@ namespace FSR.NET.Tasks
             }
         }
 
-        private async Task<long> DownloadWithRetryAsync(HttpClient client, ITaskItem item, int index, int totalCount, string tempRoot)
+        private async Task<long> DownloadWithRetryAsync(HttpClient client, DownloadEntry entry, int index, int totalCount, string tempRoot)
         {
-            string rid = item.GetMetadata("Rid");
-            string assetName = item.GetMetadata("AssetName");
-            string url = item.GetMetadata("DownloadUrl");
-            string cachedPath = item.GetMetadata("CachedPath");
-            string expectedSha256 = item.GetMetadata("Sha256");
+            string rid = entry.Rid;
+            string assetName = entry.AssetName;
+            string url = entry.DownloadUrl;
+            string cachedPath = entry.CachedPath;
+            string expectedSha256 = entry.Sha256;
             string tempFile = Path.Combine(tempRoot, rid, assetName);
 
             for (int attempt = 1; ; attempt++)
@@ -271,6 +644,144 @@ namespace FSR.NET.Tasks
             }
         }
 
+        private bool CollectDirectoryFiles(string rid, string directoryPath, Dictionary<string, string> filesByName, out int added)
+        {
+            string[] candidates = Directory.GetFiles(directoryPath);
+            Array.Sort(candidates, StringComparer.Ordinal);
+            added = 0;
+
+            foreach (string candidate in candidates)
+            {
+                string fileName = Path.GetFileName(candidate);
+                if (!IsValidRuntimeFileName(rid, fileName))
+                {
+                    continue;
+                }
+
+                if (!AddFileCheckingDuplicates(filesByName, fileName, candidate, rid))
+                {
+                    return false;
+                }
+
+                added++;
+            }
+
+            return true;
+        }
+
+        private bool AddFileCheckingDuplicates(Dictionary<string, string> filesByName, string fileName, string fullPath, string rid)
+        {
+            string existingPath;
+            if (filesByName.TryGetValue(fileName, out existingPath) && !string.Equals(existingPath, fullPath, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.LogError("FSR.NET: Duplicate runtime file '{0}' for '{1}' specified at both '{2}' and '{3}'.", fileName, rid, existingPath, fullPath);
+                return false;
+            }
+
+            filesByName[fileName] = fullPath;
+            return true;
+        }
+
+        private static List<ITaskItem> CreateAssetItems(string rid, Dictionary<string, string> filesByName, bool flattenToRoot)
+        {
+            List<string> names = new List<string>(filesByName.Keys);
+            names.Sort(StringComparer.Ordinal);
+            List<ITaskItem> items = new List<ITaskItem>(names.Count);
+            foreach (string name in names)
+            {
+                items.Add(CreateAssetItem(rid, name, filesByName[name], flattenToRoot));
+            }
+
+            return items;
+        }
+
+        private static ITaskItem CreateAssetItem(string rid, string assetName, string sourcePath, bool flattenToRoot)
+        {
+            TaskItem item = new TaskItem(sourcePath);
+            item.SetMetadata("Rid", rid);
+            item.SetMetadata("AssetName", assetName);
+            item.SetMetadata("TargetOutputPath", flattenToRoot ? assetName : ("runtimes/" + rid + "/native/" + assetName));
+            return item;
+        }
+
+        private static Dictionary<string, string> CreateFileMap(string rid)
+        {
+            return new Dictionary<string, string>(rid.StartsWith("win-", StringComparison.OrdinalIgnoreCase) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        }
+
+        private static string FindCanonicalRid(List<string> supportedRids, string candidate)
+        {
+            foreach (string rid in supportedRids)
+            {
+                if (string.Equals(rid, candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    return rid;
+                }
+            }
+
+            return null;
+        }
+
+        private static HashSet<string> ParseActiveRids(string runtimeIdentifier, string runtimeIdentifiers)
+        {
+            if (!string.IsNullOrWhiteSpace(runtimeIdentifier))
+            {
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { runtimeIdentifier.Trim().ToLowerInvariant() };
+            }
+
+            if (!string.IsNullOrWhiteSpace(runtimeIdentifiers))
+            {
+                HashSet<string> result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                string[] parts = runtimeIdentifiers.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string part in parts)
+                {
+                    string trimmed = part.Trim().ToLowerInvariant();
+                    if (trimmed.Length > 0)
+                    {
+                        result.Add(trimmed);
+                    }
+                }
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
+            }
+
+            return null;
+        }
+
+        private static string ResolveUserPath(string rawPath, string projectDirectory)
+        {
+            string normalized = rawPath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+            string combined = Path.IsPathRooted(normalized) ? normalized : Path.Combine(projectDirectory, normalized);
+            string fullPath = Path.GetFullPath(combined);
+            string root = Path.GetPathRoot(fullPath);
+            if (!string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase))
+            {
+                fullPath = fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+
+            return fullPath;
+        }
+
+        private static bool IsCoreNativeBinary(string fileName)
+        {
+            return string.Equals(fileName, "amd_fidelityfx_loader_dx12.dll", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(fileName, "amd_fidelityfx_loader_vk.dll", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsValidRuntimeFileName(string rid, string fileName)
+        {
+            if (IsCoreNativeBinary(fileName))
+            {
+                return false;
+            }
+
+            return rid.StartsWith("win-", StringComparison.OrdinalIgnoreCase)
+                && fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void LogHigh(string format, params object[] args)
         {
             string message = args.Length == 0 ? format : string.Format(CultureInfo.InvariantCulture, format, args);
@@ -344,63 +855,31 @@ namespace FSR.NET.Tasks
             <_FsrNormalizedRids Condition="'$(RuntimeIdentifier)' != ''">;$(RuntimeIdentifier.Trim().ToLowerInvariant());</_FsrNormalizedRids>
             <_FsrNormalizedRids Condition="'$(_FsrNormalizedRids)' == '' and '$(RuntimeIdentifiers)' != ''">;$([System.Text.RegularExpressions.Regex]::Replace('$(RuntimeIdentifiers)', '\s+', '').ToLowerInvariant());</_FsrNormalizedRids>
 
-            <_FsrCacheRoot Condition="'$(_FsrCacheRoot)' == ''">$([System.Environment]::GetFolderPath(SpecialFolder.LocalApplicationData))</_FsrCacheRoot>
             <_FsrCacheRoot Condition="'$(_FsrCacheRoot)' == ''">$([System.IO.Path]::GetTempPath())</_FsrCacheRoot>
             <_FsrCacheBaseDir>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine('$(_FsrCacheRoot)', 'FSR.NET', 'cache', '$(_FsrSdkRelease)'))'))</_FsrCacheBaseDir>
         </PropertyGroup>
-
-        <ItemGroup>
-            <_FsrRawCacheFile Include="@(_FsrManifestEntry->'$(_FsrCacheBaseDir)/%(Identity)')" />
-            <_FsrAllCacheFile Include="@(_FsrRawCacheFile->'%(FullPath)')" />
-            <_FsrAllCacheFile Update="@(_FsrAllCacheFile)">
-                <CachedPath>%(_FsrAllCacheFile.Identity)</CachedPath>
-                <DownloadUrl>$(_FsrDefaultBaseUrl)/%(_FsrAllCacheFile.RelativeUrl)</DownloadUrl>
-                <TargetOutputPath Condition="'$(RuntimeIdentifier)' != ''">%(_FsrAllCacheFile.AssetName)</TargetOutputPath>
-                <TargetOutputPath Condition="'$(RuntimeIdentifier)' == ''">runtimes/%(_FsrAllCacheFile.Rid)/native/%(_FsrAllCacheFile.AssetName)</TargetOutputPath>
-            </_FsrAllCacheFile>
-        </ItemGroup>
-
-    </Target>
-
-    <Target Name="_FsrResolveRuntimeAssets"
-            DependsOnTargets="_FsrInitializeRuntimeLayout"
-            Condition="$([System.String]::Equals('$(FsrDownloadRuntime)', 'true', System.StringComparison.OrdinalIgnoreCase)) and '$(DesignTimeBuild)' != 'true'">
-
-        <ItemGroup>
-            <_FsrSelectedEntry Include="@(_FsrAllCacheFile)"
-                               Condition="'$(_FsrNormalizedRids)' == '' or $(_FsrNormalizedRids.Contains(';%(_FsrAllCacheFile.Rid);'))" />
-            <_FsrExistingCacheFile Include="@(_FsrSelectedEntry)" Condition="Exists('%(Identity)')" />
-        </ItemGroup>
-
-        <GetFileHash Files="@(_FsrExistingCacheFile)" Algorithm="SHA256" HashEncoding="hex" Condition="'@(_FsrExistingCacheFile)' != ''">
-            <Output TaskParameter="Items" ItemName="_FsrHashedCacheFile" />
-        </GetFileHash>
-
-        <ItemGroup Condition="'@(_FsrSelectedEntry)' != ''">
-            <_FsrValidCacheFile Include="@(_FsrHashedCacheFile)" Condition="$([System.String]::Equals('%(_FsrHashedCacheFile.FileHash)', '%(_FsrHashedCacheFile.Sha256)', System.StringComparison.OrdinalIgnoreCase))" />
-            <_FsrMissingEntry Include="@(_FsrSelectedEntry)" Exclude="@(_FsrValidCacheFile)" />
-        </ItemGroup>
-
-    </Target>
-
-    <Target Name="DownloadFsrRuntime"
-            DependsOnTargets="_FsrResolveRuntimeAssets"
-            Condition="$([System.String]::Equals('$(FsrDownloadRuntime)', 'true', System.StringComparison.OrdinalIgnoreCase)) and '$(DesignTimeBuild)' != 'true' and '@(_FsrMissingEntry)' != ''">
-
-        <FsrDownloadAssets Assets="@(_FsrMissingEntry)"
-                           CacheDirectory="$(_FsrCacheBaseDir)"
-                           SdkRelease="$(_FsrSdkRelease)" />
 
     </Target>
 
     <Target Name="_FsrStageRuntimeAssets"
             BeforeTargets="AssignTargetPaths"
-            DependsOnTargets="_FsrResolveRuntimeAssets;DownloadFsrRuntime"
-            Condition="$([System.String]::Equals('$(FsrDownloadRuntime)', 'true', System.StringComparison.OrdinalIgnoreCase)) and '$(DesignTimeBuild)' != 'true'">
+            DependsOnTargets="_FsrInitializeRuntimeLayout"
+            Condition="'@(FSRRuntime)' != '' and '$(DesignTimeBuild)' != 'true'">
 
-        <ItemGroup Condition="'@(_FsrSelectedEntry)' != ''">
-            <None Include="@(_FsrSelectedEntry)">
-                <Link>%(_FsrSelectedEntry.TargetOutputPath)</Link>
+        <FsrResolveRuntime RuntimeItems="@(FSRRuntime)"
+                           ManifestEntries="@(_FsrManifestEntry)"
+                           ProjectDirectory="$(MSBuildProjectDirectory)"
+                           CacheDirectory="$(_FsrCacheBaseDir)"
+                           DefaultBaseUrl="$(_FsrDefaultBaseUrl)"
+                           SdkRelease="$(_FsrSdkRelease)"
+                           RuntimeIdentifier="$(RuntimeIdentifier)"
+                           RuntimeIdentifiers="$(RuntimeIdentifiers)">
+            <Output TaskParameter="ResolvedAssets" ItemName="_FsrResolvedAsset" />
+        </FsrResolveRuntime>
+
+        <ItemGroup Condition="'@(_FsrResolvedAsset)' != ''">
+            <None Include="@(_FsrResolvedAsset)">
+                <Link>%(_FsrResolvedAsset.TargetOutputPath)</Link>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
                 <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
@@ -411,24 +890,67 @@ namespace FSR.NET.Tasks
 
     </Target>
 
-    <Target Name="_FsrNormalizeBuildRuntimeAssets"
-            AfterTargets="GetCopyToOutputDirectoryItems"
-            DependsOnTargets="_FsrInitializeRuntimeLayout"
-            Condition="'$(DesignTimeBuild)' != 'true' and '@(_SourceItemsToCopyToOutputDirectory)' != ''">
+    <Target Name="_FsrGetTransitiveRuntimeAssets"
+            DependsOnTargets="_FsrStageRuntimeAssets;_SplitProjectReferencesByFileExistence;_GetProjectReferenceTargetFrameworkProperties"
+            Condition="'$(DesignTimeBuild)' != 'true'"
+            Returns="@(_FsrTransitiveRuntimeAsset)">
+
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)"
+                 Targets="_FsrGetTransitiveRuntimeAssets"
+                 BuildInParallel="$(BuildInParallel)"
+                 Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform); %(_MSBuildProjectReferenceExistent.SetTargetFramework)"
+                 Condition="'@(_MSBuildProjectReferenceExistent)' != '' and '%(_MSBuildProjectReferenceExistent.Private)' != 'false' and '$(UseCommonOutputDirectory)' != 'true'"
+                 ContinueOnError="$(ContinueOnError)"
+                 SkipNonexistentTargets="true"
+                 RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)">
+            <Output TaskParameter="TargetOutputs" ItemName="_FsrChildRuntimeAsset" />
+        </MSBuild>
 
         <ItemGroup>
-            <_FsrUnstagedBuildAsset Include="@(_FsrAllCacheFile)" Exclude="@(_SourceItemsToCopyToOutputDirectory)" />
-            <_FsrStagedBuildAsset Include="@(_FsrAllCacheFile)" Exclude="@(_FsrUnstagedBuildAsset)" />
+            <_FsrTransitiveRuntimeAsset Include="@(_FsrChildRuntimeAsset)"
+                                        Condition="'@(FSRRuntime)' == ''" />
+            <_FsrTransitiveRuntimeAsset Include="@(_FsrResolvedAsset)"
+                                        Condition="'@(_FsrResolvedAsset)' != ''">
+                <_FsrRid>%(_FsrResolvedAsset.Rid)</_FsrRid>
+                <_FsrAssetName>%(_FsrResolvedAsset.AssetName)</_FsrAssetName>
+            </_FsrTransitiveRuntimeAsset>
         </ItemGroup>
 
-        <ItemGroup Condition="'@(_FsrStagedBuildAsset)' != ''">
-            <_SourceItemsToCopyToOutputDirectory Remove="@(_FsrAllCacheFile)" />
-            <AllItemsFullPathWithTargetPath Remove="@(_FsrAllCacheFile)" />
-            <_FsrNormalizedBuildAsset Include="@(_FsrStagedBuildAsset)"
-                                      Condition="'$(_FsrNormalizedRids)' == '' or $(_FsrNormalizedRids.Contains(';%(_FsrStagedBuildAsset.Rid);'))">
+    </Target>
+
+    <Target Name="_FsrNormalizeBuildRuntimeAssets"
+            AfterTargets="GetCopyToOutputDirectoryItems"
+            DependsOnTargets="_FsrInitializeRuntimeLayout;_FsrGetTransitiveRuntimeAssets"
+            Condition="'$(DesignTimeBuild)' != 'true'">
+
+        <ItemGroup>
+            <_FsrBuildRemoveAsset Include="@(_FsrChildRuntimeAsset);@(_FsrResolvedAsset)" />
+        </ItemGroup>
+
+        <ItemGroup Condition="'@(_FsrBuildRemoveAsset)' != ''">
+            <_SourceItemsToCopyToOutputDirectory Remove="@(_FsrBuildRemoveAsset)" />
+            <AllItemsFullPathWithTargetPath Remove="@(_FsrBuildRemoveAsset)" />
+        </ItemGroup>
+
+        <ItemGroup Condition="'@(_FsrTransitiveRuntimeAsset)' != ''">
+            <_FsrBuildCandidate Include="@(_FsrTransitiveRuntimeAsset)"
+                                Condition="'$(_FsrNormalizedRids)' == '' or $(_FsrNormalizedRids.Contains(';%(_FsrTransitiveRuntimeAsset._FsrRid);'))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>%(_FsrStagedBuildAsset.TargetOutputPath)</TargetPath>
-            </_FsrNormalizedBuildAsset>
+                <TargetPath Condition="'$(RuntimeIdentifier)' != ''">%(_FsrTransitiveRuntimeAsset._FsrAssetName)</TargetPath>
+                <TargetPath Condition="'$(RuntimeIdentifier)' == ''">runtimes/%(_FsrTransitiveRuntimeAsset._FsrRid)/native/%(_FsrTransitiveRuntimeAsset._FsrAssetName)</TargetPath>
+            </_FsrBuildCandidate>
+
+            <_FsrBuildDedupInput Include="@(_FsrBuildCandidate->'%(TargetPath)')">
+                <OriginalIdentity>%(Identity)</OriginalIdentity>
+            </_FsrBuildDedupInput>
+        </ItemGroup>
+
+        <RemoveDuplicates Inputs="@(_FsrBuildDedupInput)" Condition="'@(_FsrBuildDedupInput)' != ''">
+            <Output TaskParameter="Filtered" ItemName="_FsrBuildDedupOutput" />
+        </RemoveDuplicates>
+
+        <ItemGroup Condition="'@(_FsrBuildDedupOutput)' != ''">
+            <_FsrNormalizedBuildAsset Include="@(_FsrBuildDedupOutput->'%(OriginalIdentity)')" />
             <_SourceItemsToCopyToOutputDirectory Include="@(_FsrNormalizedBuildAsset)" />
             <AllItemsFullPathWithTargetPath Include="@(_FsrNormalizedBuildAsset)" />
         </ItemGroup>
@@ -437,23 +959,38 @@ namespace FSR.NET.Tasks
 
     <Target Name="_FsrNormalizePublishRuntimeAssets"
             AfterTargets="GetCopyToPublishDirectoryItems"
-            DependsOnTargets="_FsrInitializeRuntimeLayout"
-            Condition="'$(DesignTimeBuild)' != 'true' and '@(_SourceItemsToCopyToPublishDirectory)' != ''">
+            DependsOnTargets="_FsrInitializeRuntimeLayout;_FsrGetTransitiveRuntimeAssets"
+            Condition="'$(DesignTimeBuild)' != 'true'">
 
         <ItemGroup>
-            <_FsrUnstagedPublishAsset Include="@(_FsrAllCacheFile)" Exclude="@(_SourceItemsToCopyToPublishDirectory)" />
-            <_FsrStagedPublishAsset Include="@(_FsrAllCacheFile)" Exclude="@(_FsrUnstagedPublishAsset)" />
+            <_FsrPublishRemoveAsset Include="@(_FsrChildRuntimeAsset);@(_FsrResolvedAsset)" />
         </ItemGroup>
 
-        <ItemGroup Condition="'@(_FsrStagedPublishAsset)' != ''">
-            <_SourceItemsToCopyToPublishDirectory Remove="@(_FsrAllCacheFile)" />
-            <AllPublishItemsFullPathWithTargetPath Remove="@(_FsrAllCacheFile)" />
-            <_FsrNormalizedPublishAsset Include="@(_FsrStagedPublishAsset)"
-                                        Condition="'$(_FsrNormalizedRids)' == '' or $(_FsrNormalizedRids.Contains(';%(_FsrStagedPublishAsset.Rid);'))">
+        <ItemGroup Condition="'@(_FsrPublishRemoveAsset)' != ''">
+            <_SourceItemsToCopyToPublishDirectory Remove="@(_FsrPublishRemoveAsset)" />
+            <AllPublishItemsFullPathWithTargetPath Remove="@(_FsrPublishRemoveAsset)" />
+        </ItemGroup>
+
+        <ItemGroup Condition="'@(_FsrTransitiveRuntimeAsset)' != ''">
+            <_FsrPublishCandidate Include="@(_FsrTransitiveRuntimeAsset)"
+                                  Condition="'$(_FsrNormalizedRids)' == '' or $(_FsrNormalizedRids.Contains(';%(_FsrTransitiveRuntimeAsset._FsrRid);'))">
                 <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
                 <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-                <TargetPath>%(_FsrStagedPublishAsset.TargetOutputPath)</TargetPath>
-            </_FsrNormalizedPublishAsset>
+                <TargetPath Condition="'$(RuntimeIdentifier)' != ''">%(_FsrTransitiveRuntimeAsset._FsrAssetName)</TargetPath>
+                <TargetPath Condition="'$(RuntimeIdentifier)' == ''">runtimes/%(_FsrTransitiveRuntimeAsset._FsrRid)/native/%(_FsrTransitiveRuntimeAsset._FsrAssetName)</TargetPath>
+            </_FsrPublishCandidate>
+
+            <_FsrPublishDedupInput Include="@(_FsrPublishCandidate->'%(TargetPath)')">
+                <OriginalIdentity>%(Identity)</OriginalIdentity>
+            </_FsrPublishDedupInput>
+        </ItemGroup>
+
+        <RemoveDuplicates Inputs="@(_FsrPublishDedupInput)" Condition="'@(_FsrPublishDedupInput)' != ''">
+            <Output TaskParameter="Filtered" ItemName="_FsrPublishDedupOutput" />
+        </RemoveDuplicates>
+
+        <ItemGroup Condition="'@(_FsrPublishDedupOutput)' != ''">
+            <_FsrNormalizedPublishAsset Include="@(_FsrPublishDedupOutput->'%(OriginalIdentity)')" />
             <_SourceItemsToCopyToPublishDirectory Include="@(_FsrNormalizedPublishAsset)" />
             <AllPublishItemsFullPathWithTargetPath Include="@(_FsrNormalizedPublishAsset)" />
         </ItemGroup>

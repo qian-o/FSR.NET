@@ -25,6 +25,12 @@ internal class ManifestEmitter(AstModel model, Dictionary<string, string> files)
         AppendLine(text, $"        <_FsrDefaultBaseUrl>{Escape(defaultBaseUrl)}</_FsrDefaultBaseUrl>");
         AppendLine(text, "    </PropertyGroup>");
         AppendLine(text);
+        AppendLine(text, "    <ItemDefinitionGroup>");
+        AppendLine(text, "        <FSRRuntime>");
+        AppendLine(text, "            <Path />");
+        AppendLine(text, "        </FSRRuntime>");
+        AppendLine(text, "    </ItemDefinitionGroup>");
+        AppendLine(text);
         AppendLine(text, "    <ItemGroup>");
 
         foreach (AstRuntimeAsset asset in source.Runtimes)

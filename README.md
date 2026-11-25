@@ -8,7 +8,7 @@ Low-level, zero-overhead C# bindings for the **AMD FidelityFX SDK** (**FSR Upsca
 ## Features
 
 - **DirectX 12 & Vulkan Support** — Complete bindings for the official `Fsr.D3D12` and `Fsr.Vulkan` C ABI loaders, descriptors, callback delegates, and header-only resource/format/matrix helpers.
-- **Lightweight Core + On-Demand Runtime Binaries** — Ships only the official `amd_fidelityfx_loader_{dx12,vk}.dll` libraries in the NuGet package; opt into `<FsrDownloadRuntime>true</FsrDownloadRuntime>` to automatically download, SHA-256 verify, cache, and stage signed effect DLLs at build/publish time.
+- **Lightweight Core + Flexible Runtime Staging** — Ships only the official `amd_fidelityfx_loader_{dx12,vk}.dll` libraries in the NuGet package; add `<FSRRuntime>` items in your `.csproj` to automatically download, SHA-256 verify, and cache signed effect DLLs in the system temporary directory, or copy local SDK/custom effect DLLs directly.
 - **Exact Native ABI & Safe Descriptor Chaining** — Explicit struct layouts verified against MSVC `sizeof`/`offsetof`, automatic `Header.Type` initialization via `new()`, and `ref` descriptor overloads that prevent struct-slicing.
 - **Native AOT & Trimming Ready** — Built with `IsAotCompatible` enabled and zero external dependencies.
 
@@ -20,17 +20,27 @@ dotnet add package FSR.NET
 
 > **Requirements:** .NET 10+, Windows `x64` (`win-x64`), and a compatible GPU and driver. Upscaling and Frame Generation support DirectX 12 and Vulkan; Ray Regeneration and Radiance Caching require DirectX 12.
 
-### Automatic Runtime Binary Download
+### Runtime Binaries
 
-To automatically download and stage official signed FSR effect DLLs (`amd_fidelityfx_upscaler*`, `amd_fidelityfx_framegeneration*`, `amd_fidelityfx_denoiser*`, `amd_fidelityfx_radiancecache*`) during `build` and `publish`, enable `FsrDownloadRuntime` in your `.csproj`:
+By default, `FSR.NET` only includes `amd_fidelityfx_loader_{dx12,vk}.dll`. Declare `<FSRRuntime>` items in your `.csproj` to stage official or local signed FSR effect DLLs (`amd_fidelityfx_upscaler*`, `amd_fidelityfx_framegeneration*`, `amd_fidelityfx_denoiser*`, `amd_fidelityfx_radiancecache*`) during `build` and `publish`:
 
 ```xml
-<PropertyGroup>
-    <FsrDownloadRuntime>true</FsrDownloadRuntime>
-</PropertyGroup>
+<ItemGroup>
+    <!-- Omit <Path> to download official signed DLLs (win-x64 or All) into Path.GetTempPath() -->
+    <FSRRuntime Include="win-x64" />
+
+    <!-- Or set <Path> to copy a local signedbin folder or specific DLL files without network access -->
+    <!--
+    <FSRRuntime Include="win-x64">
+        <Path>path\to\FidelityFX-SDK\Kits\FidelityFX\signedbin</Path>
+    </FSRRuntime>
+    -->
+</ItemGroup>
 ```
 
-Downloaded binaries are verified against pinned SHA-256 digests, cached under `LocalApplicationData/FSR.NET/cache`, filtered by `<RuntimeIdentifier>` / `<RuntimeIdentifiers>`, and kept side-by-side with the loader DLLs during `PublishSingleFile` builds.
+- **Online Download (`<Path>` omitted or empty)** — Supported `Include` values are `All`, `None`, and `win-x64`. Official binaries are verified against pinned SHA-256 digests and cached under `<SystemTemp>/FSR.NET/cache/<version>`.
+- **Local Directory or Files (`<Path>` specified)** — For `win-x64`, `<Path>` can point to either a directory of `.dll` files or an individual DLL (repeat the item to pick specific effect DLLs). For `Include="All"`, `<Path>` expects `<rid>/` subdirectories (such as `win-x64/`).
+- **Overrides, Packaging & Single-File Publish** — Concrete RID entries override matching RIDs from `All`, `Include="None"` disables inherited entries, `ProjectReference` consumers inherit staged DLLs cleanly, `dotnet pack` never bundles downloaded or copied runtime binaries, `<RuntimeIdentifier>` filters staged targets automatically, and effect DLLs stay side-by-side with the loaders during `PublishSingleFile` builds.
 
 ## Quick Start
 
