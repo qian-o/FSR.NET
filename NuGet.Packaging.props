@@ -1,7 +1,7 @@
 ﻿<Project>
 
     <PropertyGroup>
-        <Version>2.4.0</Version>
+        <Version>2.4.0.3</Version>
         <Authors>qian-o</Authors>
         <Copyright>Copyright (c) 2026 qian-o</Copyright>
         <Description>Low-level, zero-overhead C# bindings for AMD FidelityFX SDK, including FSR Upscaling, Frame Generation, Ray Regeneration, and Radiance Caching.</Description>
