@@ -40,13 +40,15 @@ public enum FSRVkResult : int
 
     ErrorUnknown = -13,
 
+    ErrorValidationFailed = -1000011001,
+
     ErrorOutOfPoolMemory = -1000069000,
 
     ErrorInvalidExternalHandle = -1000072003,
 
-    ErrorFragmentation = -1000161000,
-
     ErrorInvalidOpaqueCaptureAddress = -1000257000,
+
+    ErrorFragmentation = -1000161000,
 
     PipelineCompileRequired = 1000297000,
 
@@ -61,8 +63,6 @@ public enum FSRVkResult : int
     ErrorOutOfDateKhr = -1000001004,
 
     ErrorIncompatibleDisplayKhr = -1000003001,
-
-    ErrorValidationFailedExt = -1000011001,
 
     ErrorInvalidShaderNv = -1000012000,
 
@@ -79,6 +79,8 @@ public enum FSRVkResult : int
     ErrorVideoStdVersionNotSupportedKhr = -1000023005,
 
     ErrorInvalidDrmFormatModifierPlaneLayoutExt = -1000158000,
+
+    ErrorPresentTimingQueueFullExt = -1000208000,
 
     ErrorFullScreenExclusiveModeLostExt = -1000255000,
 
@@ -99,6 +101,8 @@ public enum FSRVkResult : int
     PipelineBinaryMissingKhr = 1000483000,
 
     ErrorNotEnoughSpaceKhr = -1000483000,
+
+    ErrorValidationFailedExt = -1000011001,
 
     ErrorOutOfPoolMemoryKhr = -1000069000,
 

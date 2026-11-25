@@ -500,7 +500,73 @@ public enum FSRVkFormat : int
 
     Pvrtc24BppSrgbBlockImg = 1000054007,
 
+    Astc3X3X3UnormBlockExt = 1000288000,
+
+    Astc3X3X3SrgbBlockExt = 1000288001,
+
+    Astc3X3X3SfloatBlockExt = 1000288002,
+
+    Astc4X3X3UnormBlockExt = 1000288003,
+
+    Astc4X3X3SrgbBlockExt = 1000288004,
+
+    Astc4X3X3SfloatBlockExt = 1000288005,
+
+    Astc4X4X3UnormBlockExt = 1000288006,
+
+    Astc4X4X3SrgbBlockExt = 1000288007,
+
+    Astc4X4X3SfloatBlockExt = 1000288008,
+
+    Astc4X4X4UnormBlockExt = 1000288009,
+
+    Astc4X4X4SrgbBlockExt = 1000288010,
+
+    Astc4X4X4SfloatBlockExt = 1000288011,
+
+    Astc5X4X4UnormBlockExt = 1000288012,
+
+    Astc5X4X4SrgbBlockExt = 1000288013,
+
+    Astc5X4X4SfloatBlockExt = 1000288014,
+
+    Astc5X5X4UnormBlockExt = 1000288015,
+
+    Astc5X5X4SrgbBlockExt = 1000288016,
+
+    Astc5X5X4SfloatBlockExt = 1000288017,
+
+    Astc5X5X5UnormBlockExt = 1000288018,
+
+    Astc5X5X5SrgbBlockExt = 1000288019,
+
+    Astc5X5X5SfloatBlockExt = 1000288020,
+
+    Astc6X5X5UnormBlockExt = 1000288021,
+
+    Astc6X5X5SrgbBlockExt = 1000288022,
+
+    Astc6X5X5SfloatBlockExt = 1000288023,
+
+    Astc6X6X5UnormBlockExt = 1000288024,
+
+    Astc6X6X5SrgbBlockExt = 1000288025,
+
+    Astc6X6X5SfloatBlockExt = 1000288026,
+
+    Astc6X6X6UnormBlockExt = 1000288027,
+
+    Astc6X6X6SrgbBlockExt = 1000288028,
+
+    Astc6X6X6SfloatBlockExt = 1000288029,
+
     R8BoolArm = 1000460000,
+
+    R16SfloatFpencodingBfloat16Arm = 1000460001,
+
+    R8SfloatFpencodingFloat8E4M3Arm = 1000460002,
+
+    R8SfloatFpencodingFloat8E5M2Arm = 1000460003,
 
     R16G16Sfixed5Nv = 1000464000,
 

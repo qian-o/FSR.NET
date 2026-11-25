@@ -29,11 +29,11 @@ public enum FSRVkImageCreateFlagBits : int
 
     CornerSampledBitNv = 8192,
 
+    DescriptorHeapCaptureReplayBitExt = 65536,
+
     SampleLocationsCompatibleDepthBitExt = 4096,
 
     SubsampledBitExt = 16384,
-
-    DescriptorBufferCaptureReplayBitExt = 65536,
 
     MultisampledRenderToSingleSampledBitExt = 262144,
 
@@ -42,6 +42,8 @@ public enum FSRVkImageCreateFlagBits : int
     VideoProfileIndependentBitKhr = 1048576,
 
     FragmentDensityMapOffsetBitExt = 32768,
+
+    AliasSingleLayerDescriptorBitKhr = 4194304,
 
     SplitInstanceBindRegionsBitKhr = 64,
 
@@ -54,6 +56,8 @@ public enum FSRVkImageCreateFlagBits : int
     DisjointBitKhr = 512,
 
     AliasBitKhr = 1024,
+
+    DescriptorBufferCaptureReplayBitExt = 65536,
 
     FragmentDensityMapOffsetBitQcom = 32768,
 

@@ -33,6 +33,8 @@ public enum FSRVkBufferUsageFlagBits : int
 
     ConditionalRenderingBitExt = 512,
 
+    DescriptorHeapBitExt = 268435456,
+
     AccelerationStructureBuildInputReadOnlyBitKhr = 524288,
 
     AccelerationStructureStorageBitKhr = 1048576,
