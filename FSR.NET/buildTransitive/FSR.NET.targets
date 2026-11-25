@@ -28,6 +28,8 @@ namespace FSR.NET.Tasks
         private const int MaxAttempts = 3;
         private const int ReadTimeoutSeconds = 60;
         private const int BufferSize = 64 * 1024;
+        private static readonly StringComparison PathComparison = Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        private static readonly StringComparer PathComparer = Path.DirectorySeparatorChar == '\\' ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
         [Required]
@@ -236,7 +238,7 @@ namespace FSR.NET.Tasks
             }
 
             Dictionary<string, List<ITaskItem>> resolvedByRid = new Dictionary<string, List<ITaskItem>>(StringComparer.OrdinalIgnoreCase);
-            Dictionary<string, int> localAllRootHits = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> localAllRootHits = new Dictionary<string, int>(PathComparer);
             List<string> localAllRootsSeen = new List<string>();
             List<DownloadEntry> downloadEntries = new List<DownloadEntry>();
             bool flattenToRoot = !string.IsNullOrWhiteSpace(RuntimeIdentifier);
@@ -672,7 +674,7 @@ namespace FSR.NET.Tasks
         private bool AddFileCheckingDuplicates(Dictionary<string, string> filesByName, string fileName, string fullPath, string rid)
         {
             string existingPath;
-            if (filesByName.TryGetValue(fileName, out existingPath) && !string.Equals(existingPath, fullPath, StringComparison.OrdinalIgnoreCase))
+            if (filesByName.TryGetValue(fileName, out existingPath) && !string.Equals(existingPath, fullPath, PathComparison))
             {
                 Log.LogError("FSR.NET: Duplicate runtime file '{0}' for '{1}' specified at both '{2}' and '{3}'.", fileName, rid, existingPath, fullPath);
                 return false;
@@ -849,7 +851,7 @@ namespace FSR.NET.Tasks
     </UsingTask>
 
     <Target Name="_FsrInitializeRuntimeLayout"
-            Condition="'$(DesignTimeBuild)' != 'true'">
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
 
         <PropertyGroup>
             <_FsrNormalizedRids Condition="'$(RuntimeIdentifier)' != ''">;$(RuntimeIdentifier.Trim().ToLowerInvariant());</_FsrNormalizedRids>
@@ -864,7 +866,7 @@ namespace FSR.NET.Tasks
     <Target Name="_FsrStageRuntimeAssets"
             BeforeTargets="AssignTargetPaths"
             DependsOnTargets="_FsrInitializeRuntimeLayout"
-            Condition="'@(FSRRuntime)' != '' and '$(DesignTimeBuild)' != 'true'">
+            Condition="'@(FSRRuntime)' != '' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
 
         <FsrResolveRuntime RuntimeItems="@(FSRRuntime)"
                            ManifestEntries="@(_FsrManifestEntry)"
@@ -892,7 +894,7 @@ namespace FSR.NET.Tasks
 
     <Target Name="_FsrGetTransitiveRuntimeAssets"
             DependsOnTargets="_FsrStageRuntimeAssets;_SplitProjectReferencesByFileExistence;_GetProjectReferenceTargetFrameworkProperties"
-            Condition="'$(DesignTimeBuild)' != 'true'"
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'"
             Returns="@(_FsrTransitiveRuntimeAsset)">
 
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)"
@@ -921,7 +923,7 @@ namespace FSR.NET.Tasks
     <Target Name="_FsrNormalizeBuildRuntimeAssets"
             AfterTargets="GetCopyToOutputDirectoryItems"
             DependsOnTargets="_FsrInitializeRuntimeLayout;_FsrGetTransitiveRuntimeAssets"
-            Condition="'$(DesignTimeBuild)' != 'true'">
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
 
         <ItemGroup>
             <_FsrBuildRemoveAsset Include="@(_FsrChildRuntimeAsset);@(_FsrResolvedAsset)" />
@@ -960,7 +962,7 @@ namespace FSR.NET.Tasks
     <Target Name="_FsrNormalizePublishRuntimeAssets"
             AfterTargets="GetCopyToPublishDirectoryItems"
             DependsOnTargets="_FsrInitializeRuntimeLayout;_FsrGetTransitiveRuntimeAssets"
-            Condition="'$(DesignTimeBuild)' != 'true'">
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
 
         <ItemGroup>
             <_FsrPublishRemoveAsset Include="@(_FsrChildRuntimeAsset);@(_FsrResolvedAsset)" />
@@ -1000,7 +1002,7 @@ namespace FSR.NET.Tasks
     <Target Name="_FsrExcludeCoreNativeFromSingleFile"
             AfterTargets="ComputeResolvedFilesToPublishList"
             BeforeTargets="_ComputeFilesToBundle;_ComputeResolvedFilesToPublishTypes"
-            Condition="'$(DesignTimeBuild)' != 'true'">
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
 
         <ItemGroup>
             <ResolvedFileToPublish Update="@(ResolvedFileToPublish)"
