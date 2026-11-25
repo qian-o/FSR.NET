@@ -3,7 +3,7 @@
     "repository": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK",
     "release": "v2.4.0",
     "commit": "7539ae8b6568ad29ed78a753404351daf3b5cca7",
-    "vulkanCommit": "d277a0a3cda9c682708c93279f0c72cd6b0ae3f3",
+    "vulkanCommit": "6802bb4733b63ed5efd3adb308a6c885ef180ea1",
     "natives": {
       "win-x64": {
         "amd_fidelityfx_loader_dx12.dll": "e2191d3c0828be45eb8affd4e3ec0378f2293adc345b772a7170edcf3b021ecb",
@@ -19501,10 +19501,6 @@
               "value": 1000668006
             },
             {
-              "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_LAYOUTS_FEATURES_ARM",
-              "value": 1000670000
-            },
-            {
               "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT",
               "value": 1000672000
             },
@@ -19537,18 +19533,6 @@
               "value": 1000678000
             },
             {
-              "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ADDRESS_BINDING_UNRESTRICTED_FEATURES_EXT",
-              "value": 1000679000
-            },
-            {
-              "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_FEATURES_KHR",
-              "value": 1000680000
-            },
-            {
-              "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_PROPERTIES_KHR",
-              "value": 1000680001
-            },
-            {
               "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT",
               "value": 1000687000
             },
@@ -19579,18 +19563,6 @@
             {
               "name": "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE",
               "value": 1000709002
-            },
-            {
-              "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_SMPTE_ST_209450_FEATURES_GOOGLE",
-              "value": 1000718000
-            },
-            {
-              "name": "VK_STRUCTURE_TYPE_HDR_SMPTE_ST_209450_GOOGLE",
-              "value": 1000718001
-            },
-            {
-              "name": "VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_HDR_SMPTE_ST_209450_GOOGLE",
-              "value": 1000718002
             },
             {
               "name": "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES",

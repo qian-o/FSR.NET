@@ -2456,8 +2456,6 @@ public enum FSRVkStructureType : int
 
     SharedPresentSurfaceCapabilities2Khr = 1000668006,
 
-    PhysicalDeviceCooperativeMatrixLayoutsFeaturesArm = 1000670000,
-
     PhysicalDeviceShaderOcpMicroscalingTypesFeaturesExt = 1000672000,
 
     PhysicalDeviceShaderMixedFloatDotProductFeaturesValve = 1000673000,
@@ -2474,12 +2472,6 @@ public enum FSRVkStructureType : int
 
     PhysicalDevicePrimitiveRestartIndexFeaturesExt = 1000678000,
 
-    PhysicalDeviceVertexAddressBindingUnrestrictedFeaturesExt = 1000679000,
-
-    PhysicalDeviceMaintenance12FeaturesKhr = 1000680000,
-
-    PhysicalDeviceMaintenance12PropertiesKhr = 1000680001,
-
     PhysicalDeviceImageTilingControlFeaturesExt = 1000687000,
 
     ImageTilingControlCreateInfoExt = 1000687001,
@@ -2495,12 +2487,6 @@ public enum FSRVkStructureType : int
     PhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesValve = 1000709001,
 
     BufferDeviceAddressAlignmentAllocateInfoValve = 1000709002,
-
-    PhysicalDeviceHdrSmpteSt209450FeaturesGoogle = 1000718000,
-
-    HdrSmpteSt209450Google = 1000718001,
-
-    SurfaceCapabilitiesHdrSmpteSt209450Google = 1000718002,
 
     PhysicalDeviceVariablePointerFeatures = 1000120000,
 
