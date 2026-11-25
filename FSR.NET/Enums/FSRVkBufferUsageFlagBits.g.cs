@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRVkBufferUsageFlagBits : int
 {
+    None = 0,
+
     TransferSrcBit = 1 << 0,
 
     TransferDstBit = 1 << 1,
@@ -63,7 +65,5 @@ public enum FSRVkBufferUsageFlagBits : int
 
     ShaderDeviceAddressBitKhr = 1 << 17,
 
-    FlagBitsMaxEnum = 0x7FFFFFFF,
-
-    None = 0
+    MaxEnum = 0x7FFFFFFF,
 }

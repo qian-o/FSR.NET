@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRApiDispatchFrameGenerationFlags : int
 {
+    None = 0,
+
     DrawDebugTearLines = 1 << 0,
 
     DrawDebugResetIndicators = 1 << 1,
@@ -16,6 +18,4 @@ public enum FSRApiDispatchFrameGenerationFlags : int
     Reserved1 = 1 << 5,
 
     Reserved2 = 1 << 6,
-
-    None = 0
 }

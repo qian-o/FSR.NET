@@ -67,6 +67,7 @@ public unsafe class FSRStrings : DisposableObject
         {
             NativeMemory.Free((void*)allocations[i]);
         }
+
         allocations.Clear();
     }
 

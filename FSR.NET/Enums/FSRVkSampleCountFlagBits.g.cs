@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRVkSampleCountFlagBits : int
 {
+    None = 0,
+
     _1Bit = 1 << 0,
 
     _2Bit = 1 << 1,
@@ -17,7 +19,5 @@ public enum FSRVkSampleCountFlagBits : int
 
     _64Bit = 1 << 6,
 
-    FlagBitsMaxEnum = 0x7FFFFFFF,
-
-    None = 0
+    MaxEnum = 0x7FFFFFFF,
 }

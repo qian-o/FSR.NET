@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRVkSurfaceTransformFlagBitsKHR : int
 {
+    None = 0,
+
     IdentityBitKhr = 1 << 0,
 
     Rotate90BitKhr = 1 << 1,
@@ -21,7 +23,5 @@ public enum FSRVkSurfaceTransformFlagBitsKHR : int
 
     InheritBitKhr = 1 << 8,
 
-    FlagBitsMaxEnumKhr = 0x7FFFFFFF,
-
-    None = 0
+    MaxEnumKhr = 0x7FFFFFFF,
 }

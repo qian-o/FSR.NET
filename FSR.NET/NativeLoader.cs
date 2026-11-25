@@ -58,6 +58,11 @@ internal static class NativeLoader
 
         string fileName = $"{name}.dll";
 
+        if (RuntimeDirectory == AppContext.BaseDirectory)
+        {
+            return Load(assembly, searchPath, Path.Combine(AppContext.BaseDirectory, fileName), fileName);
+        }
+
         return Load(assembly, searchPath, Path.Combine(RuntimeDirectory, fileName), Path.Combine(AppContext.BaseDirectory, fileName), fileName);
     }
 

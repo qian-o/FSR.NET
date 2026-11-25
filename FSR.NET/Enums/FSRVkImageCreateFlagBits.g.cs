@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRVkImageCreateFlagBits : int
 {
+    None = 0,
+
     SparseBindingBit = 1 << 0,
 
     SparseResidencyBit = 1 << 1,
@@ -61,7 +63,5 @@ public enum FSRVkImageCreateFlagBits : int
 
     FragmentDensityMapOffsetBitQcom = 1 << 15,
 
-    FlagBitsMaxEnum = 0x7FFFFFFF,
-
-    None = 0
+    MaxEnum = 0x7FFFFFFF,
 }

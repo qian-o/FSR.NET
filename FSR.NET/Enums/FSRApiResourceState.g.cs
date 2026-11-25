@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRApiResourceState : int
 {
+    None = 0,
+
     Common = 1 << 0,
 
     UnorderedAccess = 1 << 1,
@@ -26,6 +28,4 @@ public enum FSRApiResourceState : int
     RenderTarget = 1 << 8,
 
     DepthAttachment = 1 << 9,
-
-    None = 0
 }

@@ -29,7 +29,7 @@ public static unsafe partial class Fsr
             NativeLoader.Register();
         }
 
-        public static FSRApiReturnCodes Configure(ref FSRContext context, in FSRApiHeader desc)
+        public static FSRApiReturnCodes Configure(ref FSRContext context, ref FSRApiHeader desc)
         {
             fixed (FSRContext* pContext = &context)
             {
@@ -40,7 +40,7 @@ public static unsafe partial class Fsr
             }
         }
 
-        public static FSRApiReturnCodes Configure(in FSRApiHeader desc)
+        public static FSRApiReturnCodes Configure(ref FSRApiHeader desc)
         {
             fixed (FSRApiHeader* pDesc = &desc)
             {
@@ -67,7 +67,7 @@ public static unsafe partial class Fsr
             }
         }
 
-        public static FSRApiReturnCodes Dispatch(ref FSRContext context, in FSRApiHeader desc)
+        public static FSRApiReturnCodes Dispatch(ref FSRContext context, ref FSRApiHeader desc)
         {
             fixed (FSRContext* pContext = &context)
             {

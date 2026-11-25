@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRApiCreateContextFrameGenerationFlags : int
 {
+    None = 0,
+
     AsyncWorkloadSupport = 1 << 0,
 
     DisplayResolutionMotionVectors = 1 << 1,
@@ -16,6 +18,4 @@ public enum FSRApiCreateContextFrameGenerationFlags : int
     HighDynamicRange = 1 << 5,
 
     DebugChecking = 1 << 6,
-
-    None = 0
 }

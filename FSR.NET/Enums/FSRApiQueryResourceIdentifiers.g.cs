@@ -1,16 +1,19 @@
 ﻿namespace FSR.NET;
 
+[Flags]
 public enum FSRApiQueryResourceIdentifiers : int
 {
-    Color = 1,
+    None = 0,
 
-    Depth = 2,
+    InputColor = 1 << 0,
 
-    Mv = 4,
+    InputDepth = 1 << 1,
 
-    Exposure = 8,
+    InputMv = 1 << 2,
 
-    ReactiveMask = 16,
+    InputExposure = 1 << 3,
 
-    TransparencyComposition = 32,
+    InputReactiveMask = 1 << 4,
+
+    InputTransparencyComposition = 1 << 5,
 }

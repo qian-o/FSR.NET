@@ -38,7 +38,7 @@ internal class FunctionEmitter(TypeMapper mapper, Dictionary<string, string> fil
 
     private static void WriteOverloads(CodeWriter text)
     {
-        text.BeginBlock("public static FSRApiReturnCodes Configure(ref FSRContext context, in FSRApiHeader desc)");
+        text.BeginBlock("public static FSRApiReturnCodes Configure(ref FSRContext context, ref FSRApiHeader desc)");
         text.BeginBlock("fixed (FSRContext* pContext = &context)");
         text.BeginBlock("fixed (FSRApiHeader* pDesc = &desc)");
         text.WriteLine("return Configure(pContext, pDesc);");
@@ -46,7 +46,7 @@ internal class FunctionEmitter(TypeMapper mapper, Dictionary<string, string> fil
         text.EndBlock();
         text.EndBlock();
 
-        text.BeginBlock("public static FSRApiReturnCodes Configure(in FSRApiHeader desc)");
+        text.BeginBlock("public static FSRApiReturnCodes Configure(ref FSRApiHeader desc)");
         text.BeginBlock("fixed (FSRApiHeader* pDesc = &desc)");
         text.WriteLine("return Configure(null, pDesc);");
         text.EndBlock();
@@ -66,7 +66,7 @@ internal class FunctionEmitter(TypeMapper mapper, Dictionary<string, string> fil
         text.EndBlock();
         text.EndBlock();
 
-        text.BeginBlock("public static FSRApiReturnCodes Dispatch(ref FSRContext context, in FSRApiHeader desc)");
+        text.BeginBlock("public static FSRApiReturnCodes Dispatch(ref FSRContext context, ref FSRApiHeader desc)");
         text.BeginBlock("fixed (FSRContext* pContext = &context)");
         text.BeginBlock("fixed (FSRApiHeader* pDesc = &desc)");
         text.WriteLine("return Dispatch(pContext, pDesc);");

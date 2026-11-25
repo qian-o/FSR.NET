@@ -240,23 +240,49 @@ internal class TypeMapper
         return char.IsDigit(name[0]) ? $"_{name}" : name;
     }
 
-    internal static string[] GetEnumMemberNames(AstEnum value)
+    internal static (AstEnumValue Item, string Name)[] GetEnumMembers(string enumName, AstEnum value)
     {
-        string[] first = value.Values[0].Name.Split('_');
-        int prefixLength = first.Length - 1;
-        foreach (AstEnumValue item in value.Values)
+        string[]? stripped = StripEnumPrefix(enumName, value.Values);
+        string[] nativeNames;
+        if (stripped is not null)
         {
-            string[] parts = item.Name.Split('_');
-            prefixLength = Math.Min(prefixLength, parts.Length - 1);
-            while (prefixLength > 0 && !first.AsSpan(0, prefixLength).SequenceEqual(parts.AsSpan(0, prefixLength)))
+            nativeNames = stripped;
+        }
+        else if (value.Values.Length is 1)
+        {
+            string[] parts = value.Values[0].Name.Split('_');
+            string normalizedEnum = enumName.Replace("_", string.Empty, StringComparison.Ordinal);
+            int index = 0;
+            while (index < parts.Length - 1 && normalizedEnum.Contains(parts[index], StringComparison.OrdinalIgnoreCase))
             {
-                prefixLength--;
+                index++;
             }
+
+            nativeNames = [string.Join('_', parts.Skip(index))];
+        }
+        else
+        {
+            string[] first = value.Values[0].Name.Split('_');
+            int prefixLength = first.Length - 1;
+            foreach (AstEnumValue item in value.Values)
+            {
+                string[] parts = item.Name.Split('_');
+                prefixLength = Math.Min(prefixLength, parts.Length - 1);
+                while (prefixLength > 0 && !first.AsSpan(0, prefixLength).SequenceEqual(parts.AsSpan(0, prefixLength)))
+                {
+                    prefixLength--;
+                }
+            }
+
+            nativeNames = [.. value.Values.Select(item => string.Join('_', item.Name.Split('_').Skip(prefixLength)))];
         }
 
-        string[] nativeNames = [.. value.Values.Select(item => string.Join('_', item.Name.Split('_').Skip(prefixLength)))];
         string[] names = [.. nativeNames.Select(GetEnumMemberName)];
-        HashSet<string> collisions = [.. names.GroupBy(static member => member, StringComparer.Ordinal).Where(static group => group.Count() > 1).Select(static group => group.Key)];
+        HashSet<string> collisions = [.. names.Zip(value.Values, static (name, item) => (Name: name, item.Value))
+            .Distinct()
+            .GroupBy(static pair => pair.Name, StringComparer.Ordinal)
+            .Where(static group => group.Count() > 1)
+            .Select(static group => group.Key)];
         for (int i = 0; i < names.Length; i++)
         {
             if (collisions.Contains(names[i]))
@@ -265,9 +291,67 @@ internal class TypeMapper
             }
         }
 
-        ValidateNames(value.Values.Zip(names, static (item, name) => (item.Name, name)), "enum members");
+        List<(AstEnumValue Item, string Name)> unique = [];
+        Dictionary<string, long> seen = new(StringComparer.Ordinal);
+        foreach ((AstEnumValue item, string name) in value.Values.Zip(names))
+        {
+            if (seen.TryGetValue(name, out long existing))
+            {
+                if (existing == item.Value)
+                {
+                    continue;
+                }
 
-        return names;
+                throw new InvalidOperationException($"Conflicting enum member name in {enumName}: {name}.");
+            }
+
+            seen.Add(name, item.Value);
+            unique.Add((item, name));
+        }
+
+        return [.. unique];
+    }
+
+    private static string[]? StripEnumPrefix(string enumName, AstEnumValue[] values)
+    {
+        string normalized = enumName.Replace("_", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
+        HashSet<string> prefixes = [normalized];
+        foreach (string suffix in (ReadOnlySpan<string>)["FLAGBITSKHR", "FLAGBITS", "FLAGS", "KHR", "EXT", "IDENTIFIERS", "CODES", "STATES", "TYPE"])
+        {
+            if (normalized.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                string baseName = normalized[..^suffix.Length];
+                prefixes.Add(baseName);
+                if (suffix is "FLAGS" or "FLAGBITS" or "FLAGBITSKHR")
+                {
+                    prefixes.Add($"{baseName}FLAG");
+                }
+            }
+        }
+
+        string[] result = new string[values.Length];
+        for (int index = 0; index < values.Length; index++)
+        {
+            string[] parts = values[index].Name.Split('_');
+            string? stripped = null;
+            for (int i = parts.Length - 1; i > 0; i--)
+            {
+                if (prefixes.Contains(string.Concat(parts.Take(i)).ToUpperInvariant()))
+                {
+                    stripped = string.Join('_', parts.Skip(i));
+                    break;
+                }
+            }
+
+            if (stripped is null)
+            {
+                return null;
+            }
+
+            result[index] = stripped;
+        }
+
+        return result;
     }
 
     internal static void ValidateNames(IEnumerable<(string Native, string Managed)> source, string scope)

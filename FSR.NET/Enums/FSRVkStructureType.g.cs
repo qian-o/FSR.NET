@@ -770,7 +770,7 @@ public enum FSRVkStructureType : int
 
     PipelineViewportWScalingStateCreateInfoNv = 1000087000,
 
-    Surface_Capabilities__2_Ext = 1000090000,
+    SurfaceCapabilities2Ext = 1000090000,
 
     DisplayPowerInfoExt = 1000091000,
 
@@ -2599,8 +2599,6 @@ public enum FSRVkStructureType : int
     PhysicalDevice16BitStorageFeaturesKhr = 1000083000,
 
     DescriptorUpdateTemplateCreateInfoKhr = 1000085000,
-
-    Surface_Capabilities2_Ext = 1000090000,
 
     PhysicalDeviceImagelessFramebufferFeaturesKhr = 1000108000,
 

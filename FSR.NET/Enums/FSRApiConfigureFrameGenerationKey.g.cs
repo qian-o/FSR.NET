@@ -2,7 +2,7 @@
 
 public enum FSRApiConfigureFrameGenerationKey : int
 {
-    Mode = 0,
+    DebugViewMode = 0,
 
-    FlowScale = 1,
+    DebugViewFlowScale = 1,
 }

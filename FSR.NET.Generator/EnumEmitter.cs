@@ -7,10 +7,11 @@ internal class EnumEmitter(Dictionary<string, string> files)
     internal void WriteEnum(string name, AstEnum value)
     {
         string managed = GetTypeName(name);
-        bool isUnsigned = name is "FfxApiReturnCodes" || value.Values.Any(static item => item.Value > int.MaxValue);
-        bool isFlagsEnum = name.EndsWith("Flags", StringComparison.Ordinal) || name.Contains("FlagBits", StringComparison.Ordinal) || name.EndsWith("_FLAGS", StringComparison.Ordinal) || name is "FfxApiResourceUsage" or "FfxApiResourceState" or "D3D12_RESOURCE_STATES";
-        bool hasZero = value.Values.Any(static item => item.Value is 0);
-        bool hasNone = false;
+        (AstEnumValue Item, string Name)[] members = GetEnumMembers(name, value);
+        bool isUnsigned = name is "FfxApiReturnCodes" || members.Any(static pair => pair.Item.Value > int.MaxValue);
+        bool isFlagsEnum = name.EndsWith("Flags", StringComparison.Ordinal) || name.Contains("FlagBits", StringComparison.Ordinal) || name.EndsWith("_FLAGS", StringComparison.Ordinal) || name is "FfxApiResourceUsage" or "FfxApiResourceState" or "D3D12_RESOURCE_STATES" or "FfxApiQueryResourceIdentifiers";
+        bool hasZero = members.Any(static pair => pair.Item.Value is 0);
+        bool hasNone = members.Any(static pair => pair.Name is "None");
         CodeWriter text = CreateFile();
         if (isFlagsEnum)
         {
@@ -18,9 +19,15 @@ internal class EnumEmitter(Dictionary<string, string> files)
         }
 
         text.BeginBlock($"public enum {managed} : {(isUnsigned ? "uint" : "int")}");
-        foreach ((AstEnumValue item, string member) in value.Values.Zip(GetEnumMemberNames(value)))
+
+        if (isFlagsEnum && !hasZero && !hasNone)
         {
-            hasNone |= member is "None";
+            text.WriteLine($"None = {(isUnsigned ? "0u" : "0")},");
+            text.WriteBlankLine();
+        }
+
+        foreach ((AstEnumValue item, string member) in members)
+        {
             uint bits = unchecked((uint)item.Value);
             string literal = isUnsigned ? $"{bits.ToString(CultureInfo.InvariantCulture)}u" : item.Value.ToString(CultureInfo.InvariantCulture);
             if (isFlagsEnum && bits is not 0)
@@ -33,11 +40,6 @@ internal class EnumEmitter(Dictionary<string, string> files)
 
             text.WriteLine($"{member} = {literal},");
             text.WriteBlankLine();
-        }
-
-        if (isFlagsEnum && !hasZero && !hasNone)
-        {
-            text.WriteLine($"None = {(isUnsigned ? "0u" : "0")}");
         }
 
         text.EndBlock();

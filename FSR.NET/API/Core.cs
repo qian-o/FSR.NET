@@ -28,6 +28,16 @@ namespace FSR.NET;
 
 public static unsafe partial class Fsr
 {
+    public static FSRApiMatrix4x4 ConvertToMatrix4x4(ReadOnlySpan<float> source, FSRApiMatrixLayout layout, FSRApiMatrixVectorConvention convention)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(source.Length, 16);
+
+        fixed (float* pSource = source)
+        {
+            return ConvertToMatrix4x4(pSource, layout, convention);
+        }
+    }
+
     public static FSRApiMatrix4x4 ConvertToMatrix4x4(float* source, FSRApiMatrixLayout layout, FSRApiMatrixVectorConvention convention)
     {
         FSRApiMatrix4x4 result;

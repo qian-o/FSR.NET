@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRApiDispatchRadianceCacheFlags : int
 {
+    None = 0,
+
     DispatchInference = 1 << 0,
 
     DispatchTraining = 1 << 1,
@@ -18,6 +20,4 @@ public enum FSRApiDispatchRadianceCacheFlags : int
     OverrideLearningRate = 1 << 5,
 
     OverrideWeightSmoothing = 1 << 6,
-
-    None = 0
 }

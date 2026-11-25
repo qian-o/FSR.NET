@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRVkCompositeAlphaFlagBitsKHR : int
 {
+    None = 0,
+
     OpaqueBitKhr = 1 << 0,
 
     PreMultipliedBitKhr = 1 << 1,
@@ -11,7 +13,5 @@ public enum FSRVkCompositeAlphaFlagBitsKHR : int
 
     InheritBitKhr = 1 << 3,
 
-    FlagBitsMaxEnumKhr = 0x7FFFFFFF,
-
-    None = 0
+    MaxEnumKhr = 0x7FFFFFFF,
 }

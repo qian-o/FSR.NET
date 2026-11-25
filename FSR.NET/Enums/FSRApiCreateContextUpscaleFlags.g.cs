@@ -3,6 +3,8 @@
 [Flags]
 public enum FSRApiCreateContextUpscaleFlags : int
 {
+    None = 0,
+
     HighDynamicRange = 1 << 0,
 
     DisplayResolutionMotionVectors = 1 << 1,
@@ -22,6 +24,4 @@ public enum FSRApiCreateContextUpscaleFlags : int
     NonLinearColorSpace = 1 << 8,
 
     DebugVisualization = 1 << 9,
-
-    None = 0
 }
