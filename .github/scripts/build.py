@@ -161,7 +161,7 @@ def prepare(root: Path) -> None:
         runtimes["win-x64"][relative] = info["sha256"]
         path.unlink()
 
-    vulkan_commit = api(VULKAN_REPOSITORY, "commits/HEAD")["sha"]
+    vulkan_commit = api(VULKAN_REPOSITORY, "tags?per_page=1")[0]["commit"]["sha"]
     vulkan_tree = api(VULKAN_REPOSITORY, f"git/trees/{vulkan_commit}?recursive=1")
     if vulkan_tree.get("truncated"):
         raise RuntimeError("Vulkan headers tree response is truncated.")
@@ -422,7 +422,7 @@ def verify_manifest(root: Path, source: dict) -> None:
 
     ElementTree.parse(targets_path)
     targets_text = targets_path.read_text(encoding="utf-8-sig")
-    for token in (f"{PREFIX}DownloadRuntime", f"{PREFIX}DownloadAssets", f"{PACKAGE}.props"):
+    for token in (f"{PREFIX}DownloadRuntime", f"{PREFIX}DownloadAssets", f"{PACKAGE}.props", "System.Net.Http", "ExcludeFromSingleFile"):
         if token not in targets_text:
             raise RuntimeError(f"buildTransitive/{PACKAGE}.targets missing expected symbol: {token}")
     print(f"Verified buildTransitive runtime manifest ({len(expected_entries)} entries) and targets.")

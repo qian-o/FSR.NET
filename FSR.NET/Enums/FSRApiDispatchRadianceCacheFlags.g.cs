@@ -3,19 +3,21 @@
 [Flags]
 public enum FSRApiDispatchRadianceCacheFlags : int
 {
-    DispatchInference = 1,
+    DispatchInference = 1 << 0,
 
-    DispatchTraining = 2,
+    DispatchTraining = 1 << 1,
 
-    ClearInferenceCounter = 4,
+    ClearInferenceCounter = 1 << 2,
 
-    ClearTrainingCounter = 8,
+    ClearTrainingCounter = 1 << 3,
 
-    ClearAllCounters = 12,
+    ClearAllCounters = (1 << 2) | (1 << 3),
 
-    Reset = 16,
+    Reset = 1 << 4,
 
-    OverrideLearningRate = 32,
+    OverrideLearningRate = 1 << 5,
 
-    OverrideWeightSmoothing = 64,
+    OverrideWeightSmoothing = 1 << 6,
+
+    None = 0
 }

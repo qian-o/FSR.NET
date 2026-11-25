@@ -3,7 +3,9 @@
 [Flags]
 public enum FSRApiCreateContextDenoiserFlags : int
 {
-    Debugging = 1,
+    Debugging = 1 << 0,
 
-    Validation = 2,
+    Validation = 1 << 1,
+
+    None = 0
 }

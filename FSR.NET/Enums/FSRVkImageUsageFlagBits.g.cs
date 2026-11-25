@@ -3,59 +3,61 @@
 [Flags]
 public enum FSRVkImageUsageFlagBits : int
 {
-    TransferSrcBit = 1,
+    TransferSrcBit = 1 << 0,
 
-    TransferDstBit = 2,
+    TransferDstBit = 1 << 1,
 
-    SampledBit = 4,
+    SampledBit = 1 << 2,
 
-    StorageBit = 8,
+    StorageBit = 1 << 3,
 
-    ColorAttachmentBit = 16,
+    ColorAttachmentBit = 1 << 4,
 
-    DepthStencilAttachmentBit = 32,
+    DepthStencilAttachmentBit = 1 << 5,
 
-    TransientAttachmentBit = 64,
+    TransientAttachmentBit = 1 << 6,
 
-    InputAttachmentBit = 128,
+    InputAttachmentBit = 1 << 7,
 
-    HostTransferBit = 4194304,
+    HostTransferBit = 1 << 22,
 
-    VideoDecodeDstBitKhr = 1024,
+    VideoDecodeDstBitKhr = 1 << 10,
 
-    VideoDecodeSrcBitKhr = 2048,
+    VideoDecodeSrcBitKhr = 1 << 11,
 
-    VideoDecodeDpbBitKhr = 4096,
+    VideoDecodeDpbBitKhr = 1 << 12,
 
-    FragmentDensityMapBitExt = 512,
+    FragmentDensityMapBitExt = 1 << 9,
 
-    FragmentShadingRateAttachmentBitKhr = 256,
+    FragmentShadingRateAttachmentBitKhr = 1 << 8,
 
-    VideoEncodeDstBitKhr = 8192,
+    VideoEncodeDstBitKhr = 1 << 13,
 
-    VideoEncodeSrcBitKhr = 16384,
+    VideoEncodeSrcBitKhr = 1 << 14,
 
-    VideoEncodeDpbBitKhr = 32768,
+    VideoEncodeDpbBitKhr = 1 << 15,
 
-    AttachmentFeedbackLoopBitExt = 524288,
+    AttachmentFeedbackLoopBitExt = 1 << 19,
 
-    InvocationMaskBitHuawei = 262144,
+    InvocationMaskBitHuawei = 1 << 18,
 
-    SampleWeightBitQcom = 1048576,
+    SampleWeightBitQcom = 1 << 20,
 
-    SampleBlockMatchBitQcom = 2097152,
+    SampleBlockMatchBitQcom = 1 << 21,
 
-    TensorAliasingBitArm = 8388608,
+    TensorAliasingBitArm = 1 << 23,
 
-    TileMemoryBitQcom = 134217728,
+    TileMemoryBitQcom = 1 << 27,
 
-    VideoEncodeQuantizationDeltaMapBitKhr = 33554432,
+    VideoEncodeQuantizationDeltaMapBitKhr = 1 << 25,
 
-    VideoEncodeEmphasisMapBitKhr = 67108864,
+    VideoEncodeEmphasisMapBitKhr = 1 << 26,
 
-    ShadingRateImageBitNv = 256,
+    ShadingRateImageBitNv = 1 << 8,
 
-    HostTransferBitExt = 4194304,
+    HostTransferBitExt = 1 << 22,
 
-    FlagBitsMaxEnum = 2147483647,
+    FlagBitsMaxEnum = 0x7FFFFFFF,
+
+    None = 0
 }

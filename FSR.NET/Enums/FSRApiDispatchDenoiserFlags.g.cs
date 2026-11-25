@@ -3,9 +3,11 @@
 [Flags]
 public enum FSRApiDispatchDenoiserFlags : int
 {
-    Reset = 1,
+    Reset = 1 << 0,
 
-    NonEncodedAlbedo = 2,
+    NonEncodedAlbedo = 1 << 1,
 
-    NonGammaAlbedo = 2,
+    NonGammaAlbedo = 1 << 1,
+
+    None = 0
 }

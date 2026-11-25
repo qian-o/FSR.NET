@@ -3,11 +3,13 @@
 [Flags]
 public enum FSRApiDispatchUpscaleAutoReactiveFlags : int
 {
-    ApplyToneMap = 1,
+    ApplyToneMap = 1 << 0,
 
-    ApplyInverseToneMap = 2,
+    ApplyInverseToneMap = 1 << 1,
 
-    ApplyThreshold = 4,
+    ApplyThreshold = 1 << 2,
 
-    UseComponentsMax = 8,
+    UseComponentsMax = 1 << 3,
+
+    None = 0
 }

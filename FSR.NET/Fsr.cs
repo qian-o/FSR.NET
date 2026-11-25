@@ -6,4 +6,9 @@ public static unsafe partial class Fsr
     internal const string VulkanLibraryName = "amd_fidelityfx_loader_vk";
 
     public static string RuntimeDirectory => NativeLoader.RuntimeDirectory;
+
+    static Fsr()
+    {
+        NativeLoader.Register();
+    }
 }

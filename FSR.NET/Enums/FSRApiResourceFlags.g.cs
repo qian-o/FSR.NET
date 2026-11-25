@@ -5,7 +5,7 @@ public enum FSRApiResourceFlags : int
 {
     None = 0,
 
-    Aliasable = 1,
+    Aliasable = 1 << 0,
 
-    Undefined = 2,
+    Undefined = 1 << 1,
 }

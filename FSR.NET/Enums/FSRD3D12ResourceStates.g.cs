@@ -5,65 +5,65 @@ public enum FSRD3D12ResourceStates : int
 {
     Common = 0,
 
-    VertexAndConstantBuffer = 1,
+    VertexAndConstantBuffer = 1 << 0,
 
-    IndexBuffer = 2,
+    IndexBuffer = 1 << 1,
 
-    RenderTarget = 4,
+    RenderTarget = 1 << 2,
 
-    UnorderedAccess = 8,
+    UnorderedAccess = 1 << 3,
 
-    DepthWrite = 16,
+    DepthWrite = 1 << 4,
 
-    DepthRead = 32,
+    DepthRead = 1 << 5,
 
-    NonPixelShaderResource = 64,
+    NonPixelShaderResource = 1 << 6,
 
-    PixelShaderResource = 128,
+    PixelShaderResource = 1 << 7,
 
-    StreamOut = 256,
+    StreamOut = 1 << 8,
 
-    IndirectArgument = 512,
+    IndirectArgument = 1 << 9,
 
-    CopyDest = 1024,
+    CopyDest = 1 << 10,
 
-    CopySource = 2048,
+    CopySource = 1 << 11,
 
-    ResolveDest = 4096,
+    ResolveDest = 1 << 12,
 
-    ResolveSource = 8192,
+    ResolveSource = 1 << 13,
 
-    RaytracingAccelerationStructure = 4194304,
+    RaytracingAccelerationStructure = 1 << 22,
 
-    ShadingRateSource = 16777216,
+    ShadingRateSource = 1 << 24,
 
-    ReservedInternal8000 = 32768,
+    ReservedInternal8000 = 1 << 15,
 
-    ReservedInternal4000 = 16384,
+    ReservedInternal4000 = 1 << 14,
 
-    ReservedInternal100000 = 1048576,
+    ReservedInternal100000 = 1 << 20,
 
-    ReservedInternal40000000 = 1073741824,
+    ReservedInternal40000000 = 1 << 30,
 
-    ReservedInternal80000000 = -2147483648,
+    ReservedInternal80000000 = 1 << 31,
 
-    GenericRead = 2755,
+    GenericRead = (1 << 0) | (1 << 1) | (1 << 6) | (1 << 7) | (1 << 9) | (1 << 11),
 
-    AllShaderResource = 192,
+    AllShaderResource = (1 << 6) | (1 << 7),
 
     Present = 0,
 
-    Predication = 512,
+    Predication = 1 << 9,
 
-    VideoDecodeRead = 65536,
+    VideoDecodeRead = 1 << 16,
 
-    VideoDecodeWrite = 131072,
+    VideoDecodeWrite = 1 << 17,
 
-    VideoProcessRead = 262144,
+    VideoProcessRead = 1 << 18,
 
-    VideoProcessWrite = 524288,
+    VideoProcessWrite = 1 << 19,
 
-    VideoEncodeRead = 2097152,
+    VideoEncodeRead = 1 << 21,
 
-    VideoEncodeWrite = 8388608,
+    VideoEncodeWrite = 1 << 23,
 }

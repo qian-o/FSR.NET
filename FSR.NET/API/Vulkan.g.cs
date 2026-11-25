@@ -10,11 +10,11 @@ public static unsafe partial class Fsr
 
         [LibraryImport(VulkanLibraryName, EntryPoint = "ffxCreateContext")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-        public static partial FSRApiReturnCodes CreateContext(FSRContext* context, FSRApiHeader* desc, FSRAllocationCallbacks* memCb);
+        public static partial FSRApiReturnCodes CreateContext(FSRContext* context, FSRApiHeader* desc, FSRAllocationCallbacks* memCb = null);
 
         [LibraryImport(VulkanLibraryName, EntryPoint = "ffxDestroyContext")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-        public static partial FSRApiReturnCodes DestroyContext(FSRContext* context, FSRAllocationCallbacks* memCb);
+        public static partial FSRApiReturnCodes DestroyContext(FSRContext* context, FSRAllocationCallbacks* memCb = null);
 
         [LibraryImport(VulkanLibraryName, EntryPoint = "ffxDispatch")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -27,6 +27,74 @@ public static unsafe partial class Fsr
         static Vulkan()
         {
             NativeLoader.Register();
+        }
+
+        public static FSRApiReturnCodes Configure(ref FSRContext context, in FSRApiHeader desc)
+        {
+            fixed (FSRContext* pContext = &context)
+            {
+                fixed (FSRApiHeader* pDesc = &desc)
+                {
+                    return Configure(pContext, pDesc);
+                }
+            }
+        }
+
+        public static FSRApiReturnCodes Configure(in FSRApiHeader desc)
+        {
+            fixed (FSRApiHeader* pDesc = &desc)
+            {
+                return Configure(null, pDesc);
+            }
+        }
+
+        public static FSRApiReturnCodes CreateContext(out FSRContext context, ref FSRApiHeader desc, FSRAllocationCallbacks* memCb = null)
+        {
+            fixed (FSRContext* pContext = &context)
+            {
+                fixed (FSRApiHeader* pDesc = &desc)
+                {
+                    return CreateContext(pContext, pDesc, memCb);
+                }
+            }
+        }
+
+        public static FSRApiReturnCodes DestroyContext(ref FSRContext context, FSRAllocationCallbacks* memCb = null)
+        {
+            fixed (FSRContext* pContext = &context)
+            {
+                return DestroyContext(pContext, memCb);
+            }
+        }
+
+        public static FSRApiReturnCodes Dispatch(ref FSRContext context, in FSRApiHeader desc)
+        {
+            fixed (FSRContext* pContext = &context)
+            {
+                fixed (FSRApiHeader* pDesc = &desc)
+                {
+                    return Dispatch(pContext, pDesc);
+                }
+            }
+        }
+
+        public static FSRApiReturnCodes Query(ref FSRContext context, ref FSRApiHeader desc)
+        {
+            fixed (FSRContext* pContext = &context)
+            {
+                fixed (FSRApiHeader* pDesc = &desc)
+                {
+                    return Query(pContext, pDesc);
+                }
+            }
+        }
+
+        public static FSRApiReturnCodes Query(ref FSRApiHeader desc)
+        {
+            fixed (FSRApiHeader* pDesc = &desc)
+            {
+                return Query(null, pDesc);
+            }
         }
     }
 }

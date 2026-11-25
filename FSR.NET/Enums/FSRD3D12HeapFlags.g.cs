@@ -5,35 +5,35 @@ public enum FSRD3D12HeapFlags : int
 {
     None = 0,
 
-    Shared = 1,
+    Shared = 1 << 0,
 
-    DenyBuffers = 4,
+    DenyBuffers = 1 << 2,
 
-    AllowDisplay = 8,
+    AllowDisplay = 1 << 3,
 
-    SharedCrossAdapter = 32,
+    SharedCrossAdapter = 1 << 5,
 
-    DenyRtDsTextures = 64,
+    DenyRtDsTextures = 1 << 6,
 
-    DenyNonRtDsTextures = 128,
+    DenyNonRtDsTextures = 1 << 7,
 
-    HardwareProtected = 256,
+    HardwareProtected = 1 << 8,
 
-    AllowWriteWatch = 512,
+    AllowWriteWatch = 1 << 9,
 
-    AllowShaderAtomics = 1024,
+    AllowShaderAtomics = 1 << 10,
 
-    CreateNotResident = 2048,
+    CreateNotResident = 1 << 11,
 
-    CreateNotZeroed = 4096,
+    CreateNotZeroed = 1 << 12,
 
-    ToolsUseManualWriteTracking = 8192,
+    ToolsUseManualWriteTracking = 1 << 13,
 
     AllowAllBuffersAndTextures = 0,
 
-    AllowOnlyBuffers = 192,
+    AllowOnlyBuffers = (1 << 6) | (1 << 7),
 
-    AllowOnlyNonRtDsTextures = 68,
+    AllowOnlyNonRtDsTextures = (1 << 2) | (1 << 6),
 
-    AllowOnlyRtDsTextures = 132,
+    AllowOnlyRtDsTextures = (1 << 2) | (1 << 7),
 }

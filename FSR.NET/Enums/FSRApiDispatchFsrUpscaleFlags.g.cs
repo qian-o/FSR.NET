@@ -3,9 +3,11 @@
 [Flags]
 public enum FSRApiDispatchFsrUpscaleFlags : int
 {
-    DrawDebugView = 1,
+    DrawDebugView = 1 << 0,
 
-    NonLinearColorSrgb = 2,
+    NonLinearColorSrgb = 1 << 1,
 
-    NonLinearColorPq = 4,
+    NonLinearColorPq = 1 << 2,
+
+    None = 0
 }

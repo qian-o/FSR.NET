@@ -3,17 +3,19 @@
 [Flags]
 public enum FSRApiCreateContextFrameGenerationFlags : int
 {
-    AsyncWorkloadSupport = 1,
+    AsyncWorkloadSupport = 1 << 0,
 
-    DisplayResolutionMotionVectors = 2,
+    DisplayResolutionMotionVectors = 1 << 1,
 
-    MotionVectorsJitterCancellation = 4,
+    MotionVectorsJitterCancellation = 1 << 2,
 
-    DepthInverted = 8,
+    DepthInverted = 1 << 3,
 
-    DepthInfinite = 16,
+    DepthInfinite = 1 << 4,
 
-    HighDynamicRange = 32,
+    HighDynamicRange = 1 << 5,
 
-    DebugChecking = 64,
+    DebugChecking = 1 << 6,
+
+    None = 0
 }

@@ -3,65 +3,67 @@
 [Flags]
 public enum FSRVkBufferUsageFlagBits : int
 {
-    TransferSrcBit = 1,
+    TransferSrcBit = 1 << 0,
 
-    TransferDstBit = 2,
+    TransferDstBit = 1 << 1,
 
-    UniformTexelBufferBit = 4,
+    UniformTexelBufferBit = 1 << 2,
 
-    StorageTexelBufferBit = 8,
+    StorageTexelBufferBit = 1 << 3,
 
-    UniformBufferBit = 16,
+    UniformBufferBit = 1 << 4,
 
-    StorageBufferBit = 32,
+    StorageBufferBit = 1 << 5,
 
-    IndexBufferBit = 64,
+    IndexBufferBit = 1 << 6,
 
-    VertexBufferBit = 128,
+    VertexBufferBit = 1 << 7,
 
-    IndirectBufferBit = 256,
+    IndirectBufferBit = 1 << 8,
 
-    ShaderDeviceAddressBit = 131072,
+    ShaderDeviceAddressBit = 1 << 17,
 
-    VideoDecodeSrcBitKhr = 8192,
+    VideoDecodeSrcBitKhr = 1 << 13,
 
-    VideoDecodeDstBitKhr = 16384,
+    VideoDecodeDstBitKhr = 1 << 14,
 
-    TransformFeedbackBufferBitExt = 2048,
+    TransformFeedbackBufferBitExt = 1 << 11,
 
-    TransformFeedbackCounterBufferBitExt = 4096,
+    TransformFeedbackCounterBufferBitExt = 1 << 12,
 
-    ConditionalRenderingBitExt = 512,
+    ConditionalRenderingBitExt = 1 << 9,
 
-    DescriptorHeapBitExt = 268435456,
+    DescriptorHeapBitExt = 1 << 28,
 
-    AccelerationStructureBuildInputReadOnlyBitKhr = 524288,
+    AccelerationStructureBuildInputReadOnlyBitKhr = 1 << 19,
 
-    AccelerationStructureStorageBitKhr = 1048576,
+    AccelerationStructureStorageBitKhr = 1 << 20,
 
-    ShaderBindingTableBitKhr = 1024,
+    ShaderBindingTableBitKhr = 1 << 10,
 
-    VideoEncodeDstBitKhr = 32768,
+    VideoEncodeDstBitKhr = 1 << 15,
 
-    VideoEncodeSrcBitKhr = 65536,
+    VideoEncodeSrcBitKhr = 1 << 16,
 
-    SamplerDescriptorBufferBitExt = 2097152,
+    SamplerDescriptorBufferBitExt = 1 << 21,
 
-    ResourceDescriptorBufferBitExt = 4194304,
+    ResourceDescriptorBufferBitExt = 1 << 22,
 
-    PushDescriptorsDescriptorBufferBitExt = 67108864,
+    PushDescriptorsDescriptorBufferBitExt = 1 << 26,
 
-    MicromapBuildInputReadOnlyBitExt = 8388608,
+    MicromapBuildInputReadOnlyBitExt = 1 << 23,
 
-    MicromapStorageBitExt = 16777216,
+    MicromapStorageBitExt = 1 << 24,
 
-    TileMemoryBitQcom = 134217728,
+    TileMemoryBitQcom = 1 << 27,
 
-    RayTracingBitNv = 1024,
+    RayTracingBitNv = 1 << 10,
 
-    ShaderDeviceAddressBitExt = 131072,
+    ShaderDeviceAddressBitExt = 1 << 17,
 
-    ShaderDeviceAddressBitKhr = 131072,
+    ShaderDeviceAddressBitKhr = 1 << 17,
 
-    FlagBitsMaxEnum = 2147483647,
+    FlagBitsMaxEnum = 0x7FFFFFFF,
+
+    None = 0
 }

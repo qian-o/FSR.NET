@@ -16,6 +16,46 @@ public unsafe class FSRStrings : DisposableObject
         return OperatingSystem.IsWindows() ? Alloc(value, Encoding.Unicode, sizeof(char)) : Alloc(value, Encoding.UTF32, sizeof(uint));
     }
 
+    public byte** AllocUtf8(ReadOnlySpan<string?> values)
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+
+        if (values.IsEmpty)
+        {
+            return null;
+        }
+
+        byte** table = (byte**)NativeMemory.AllocZeroed(checked((nuint)values.Length * (nuint)sizeof(nint)));
+        allocations.Add((nint)table);
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            table[i] = AllocUtf8(values[i]);
+        }
+
+        return table;
+    }
+
+    public void** AllocWide(ReadOnlySpan<string?> values)
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+
+        if (values.IsEmpty)
+        {
+            return null;
+        }
+
+        void** table = (void**)NativeMemory.AllocZeroed(checked((nuint)values.Length * (nuint)sizeof(nint)));
+        allocations.Add((nint)table);
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            table[i] = AllocWide(values[i]);
+        }
+
+        return table;
+    }
+
     protected override void Destroy()
     {
         if (allocations is null)

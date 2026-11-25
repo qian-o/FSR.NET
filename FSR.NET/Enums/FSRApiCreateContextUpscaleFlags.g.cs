@@ -3,23 +3,25 @@
 [Flags]
 public enum FSRApiCreateContextUpscaleFlags : int
 {
-    HighDynamicRange = 1,
+    HighDynamicRange = 1 << 0,
 
-    DisplayResolutionMotionVectors = 2,
+    DisplayResolutionMotionVectors = 1 << 1,
 
-    MotionVectorsJitterCancellation = 4,
+    MotionVectorsJitterCancellation = 1 << 2,
 
-    DepthInverted = 8,
+    DepthInverted = 1 << 3,
 
-    DepthInfinite = 16,
+    DepthInfinite = 1 << 4,
 
-    AutoExposure = 32,
+    AutoExposure = 1 << 5,
 
-    DynamicResolution = 64,
+    DynamicResolution = 1 << 6,
 
-    DebugChecking = 128,
+    DebugChecking = 1 << 7,
 
-    NonLinearColorSpace = 256,
+    NonLinearColorSpace = 1 << 8,
 
-    DebugVisualization = 512,
+    DebugVisualization = 1 << 9,
+
+    None = 0
 }

@@ -5,17 +5,17 @@ public enum FSRApiResourceUsage : int
 {
     ReadOnly = 0,
 
-    RenderTarget = 1,
+    RenderTarget = 1 << 0,
 
-    Uav = 2,
+    Uav = 1 << 1,
 
-    DepthTarget = 4,
+    DepthTarget = 1 << 2,
 
-    Indirect = 8,
+    Indirect = 1 << 3,
 
-    ArrayView = 16,
+    ArrayView = 1 << 4,
 
-    StencilTarget = 32,
+    StencilTarget = 1 << 5,
 
-    DccRenderTarget = 32768,
+    DccRenderTarget = 1 << 15,
 }

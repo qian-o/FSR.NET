@@ -60,15 +60,20 @@ def extract(sdk: Path, scratch: Path, llvm: Path):
     convention.argtypes = [cx.Type]
     convention.restype = c_uint
     resource = subprocess.check_output([str(compiler), "-print-resource-dir"], text=True).strip()
+    include_paths = [p for p in os.environ.get("INCLUDE", "").split(";") if p]
+    if not include_paths:
+        raise RuntimeError("MSVC environment (INCLUDE) is not configured.")
+    version = subprocess.run(["cl"], text=True, capture_output=True).stderr
+    match = re.search(r"\b\d+\.\d+\.\d+\b", version)
+    msvc_version = match.group() if match else "19.40"
     flags = [
         "-x", "c++", "-std=c++20", "--target=x86_64-pc-windows-msvc", "-resource-dir=" + resource,
-        "-fms-extensions", "-fms-compatibility", "-fms-compatibility-version=19.40",
+        "-fms-extensions", "-fms-compatibility", "-fms-compatibility-version=" + msvc_version,
         "-DNOMINMAX", "-DWIN32_LEAN_AND_MEAN", "-D_WINDOWS",
         "-Wno-deprecated-declarations", "-I" + str(sdk / "vulkan/include"),
     ]
-    for path in os.environ.get("INCLUDE", "").split(";"):
-        if path:
-            flags += ["-isystem", str(path)]
+    for path in include_paths:
+        flags += ["-isystem", path]
     records, enums, functions, aliases, macros, helpers = {}, {}, {}, {}, {}, {}
     headers = public_headers(sdk)
     owned = {str(path.resolve()) for path in headers}

@@ -3,5 +3,7 @@
 [Flags]
 public enum FSRApiCreateContextRadianceCacheFlags : int
 {
-    Wmma = 1,
+    Wmma = 1 << 0,
+
+    None = 0
 }

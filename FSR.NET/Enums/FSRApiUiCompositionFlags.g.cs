@@ -3,7 +3,9 @@
 [Flags]
 public enum FSRApiUiCompositionFlags : int
 {
-    UsePremulAlpha = 1,
+    UsePremulAlpha = 1 << 0,
 
-    EnableInternalUiDoubleBuffering = 2,
+    EnableInternalUiDoubleBuffering = 1 << 1,
+
+    None = 0
 }

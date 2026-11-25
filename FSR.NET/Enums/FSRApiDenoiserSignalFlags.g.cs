@@ -5,17 +5,17 @@ public enum FSRApiDenoiserSignalFlags : int
 {
     None = 0,
 
-    AmbientOcclusion = 1,
+    AmbientOcclusion = 1 << 0,
 
-    DirectDiffuse = 2,
+    DirectDiffuse = 1 << 1,
 
-    DirectSpecular = 4,
+    DirectSpecular = 1 << 2,
 
-    DominantLightVisibility = 8,
+    DominantLightVisibility = 1 << 3,
 
-    IndirectDiffuse = 16,
+    IndirectDiffuse = 1 << 4,
 
-    IndirectSpecular = 32,
+    IndirectSpecular = 1 << 5,
 
-    SpecularOcclusion = 64,
+    SpecularOcclusion = 1 << 6,
 }
