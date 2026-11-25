@@ -1,0 +1,5 @@
+* text=auto
+FSR.NET/**/*.g.cs text eol=lf
+FSR.NET/buildTransitive/* text eol=lf
+*.dll binary
+*.so binary

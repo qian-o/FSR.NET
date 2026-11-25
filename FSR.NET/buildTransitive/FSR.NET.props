@@ -1,0 +1,18 @@
+﻿<Project>
+
+    <PropertyGroup>
+        <_FsrSdkRelease>v2.4.0</_FsrSdkRelease>
+        <_FsrSdkCommit>7539ae8b6568ad29ed78a753404351daf3b5cca7</_FsrSdkCommit>
+        <_FsrDefaultBaseUrl>https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/7539ae8b6568ad29ed78a753404351daf3b5cca7</_FsrDefaultBaseUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <_FsrManifestEntry Include="win-x64/amd_fidelityfx_denoiser_dx12.dll" Rid="win-x64" AssetName="amd_fidelityfx_denoiser_dx12.dll" RelativeUrl="Kits/FidelityFX/signedbin/amd_fidelityfx_denoiser_dx12.dll" Sha256="4CA5182D5C8A855441E0C82673716E4776F9AFCFADFDB4225D2FC6113B0F853C" />
+        <_FsrManifestEntry Include="win-x64/amd_fidelityfx_framegeneration_dx12.dll" Rid="win-x64" AssetName="amd_fidelityfx_framegeneration_dx12.dll" RelativeUrl="Kits/FidelityFX/signedbin/amd_fidelityfx_framegeneration_dx12.dll" Sha256="E6843252F58B0341A0D80F6A20BC0D840643EE95BC48C22CAC08745344577BB6" />
+        <_FsrManifestEntry Include="win-x64/amd_fidelityfx_framegeneration_vk.dll" Rid="win-x64" AssetName="amd_fidelityfx_framegeneration_vk.dll" RelativeUrl="Kits/FidelityFX/signedbin/amd_fidelityfx_framegeneration_vk.dll" Sha256="D002DABFF8C5E71EAA715FC99438CD4DC81230262A7897B16BC402EFEC3498B4" />
+        <_FsrManifestEntry Include="win-x64/amd_fidelityfx_radiancecache_dx12.dll" Rid="win-x64" AssetName="amd_fidelityfx_radiancecache_dx12.dll" RelativeUrl="Kits/FidelityFX/signedbin/amd_fidelityfx_radiancecache_dx12.dll" Sha256="C87394EBF928E681CD66BEA3A3A90E9CE43D0B8682FC8A404BA4512B38D88F50" />
+        <_FsrManifestEntry Include="win-x64/amd_fidelityfx_upscaler_dx12.dll" Rid="win-x64" AssetName="amd_fidelityfx_upscaler_dx12.dll" RelativeUrl="Kits/FidelityFX/signedbin/amd_fidelityfx_upscaler_dx12.dll" Sha256="AAD4FCCCCB29084A655F9A4F9F613BD22C8C03FB4A0F8840148CC6543B4CCACE" />
+        <_FsrManifestEntry Include="win-x64/amd_fidelityfx_upscaler_vk.dll" Rid="win-x64" AssetName="amd_fidelityfx_upscaler_vk.dll" RelativeUrl="Kits/FidelityFX/signedbin/amd_fidelityfx_upscaler_vk.dll" Sha256="4A7E895AF6E0B615D40A84D59EB8C2B1054AD91CDD0C739567940270D51BDAB7" />
+    </ItemGroup>
+
+</Project>
