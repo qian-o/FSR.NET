@@ -2,15 +2,10 @@
 
     <Import Project="$(MSBuildThisFileDirectory)FSR.NET.props" Condition="'$(_FsrSdkRelease)' == ''" />
 
-    <PropertyGroup>
-        <_FsrHttpReference Condition="'$(MSBuildRuntimeType)' == 'Full'"><![CDATA[<Reference Include="System.Net.Http" />]]></_FsrHttpReference>
-    </PropertyGroup>
-
     <UsingTask TaskName="FsrDownloadAssets"
                TaskFactory="RoslynCodeTaskFactory"
                AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
-            $(_FsrHttpReference)
             <Code Type="Class" Language="cs">
 <![CDATA[
 using System;
